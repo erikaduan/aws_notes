@@ -2,9 +2,9 @@
 
 ![](https://img.shields.io/badge/Language-Bash-blue) ![](https://img.shields.io/badge/Language-Python-blue)  
 
-[Step 1: Create AWS root user account](#-step-1:-create-aws-root-user-account)  
-[Step 2: Create an IAM admin user and user group via the root user account](#-step-2:-create-an-iam-admin-user-and-user-group-via-the-root-user-account)  
-[Step 3: Create more user groups via the IAM admin user account](#-step-3:-create-more-user-groups-via-the-iam-admin-user-account)  
+Step 1: [Create AWS root user account](#create-aws-root-user-account)  
+Step 2: [Create an IAM admin user and user group via the root user account](#create-an-iam-admin-user-and-user-group-via-the-root-user-account)  
+Step 3: [Create more user groups via the IAM admin user account](#create-more-user-groups-via-the-iam-admin-user-account)  
 
 This repository contains AWS CloudShell (bash) code snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).      
 
@@ -12,7 +12,7 @@ This repository contains AWS CloudShell (bash) code snippets for setting up a se
 </br>
 
 
-# Step 1: Create AWS root user account   
+# Create AWS root user account   
 When you create a free personal AWS account, you first create a [root user account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html) which should only be used to:  
 + Create or delete an AWS account
 + Enable MFA on the AWS account root user 
@@ -35,7 +35,7 @@ The first four tasks to complete in your root user account are to:
 </br>
 
 
-# Step 2: Create an IAM admin user and user group via the root user account   
+# Create an IAM admin user and user group via the root user account   
 [AWS recommends the creation of managed policies rather than inline policies to control user access to AWS resources.](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) Managed policies can be attached to multiple users or user groups and governance is controlled around maintaining a central library of AWS policies. Policy changes automatically apply for all associated users or user groups. Inline policies should only be used when you want to maintain strict one-to-one relationships between a policy and AWS identity. 
 
 ![](https://github.com/erikaduan/aws_notes/blob/main/figures/aws_iam_policies.svg)  
@@ -84,7 +84,7 @@ You can now log into your IAM administrator account to create more IAM users, us
 </br> 
 
 
-# Step 3: Create more user groups via the IAM admin user account   
+# Create more user groups via the IAM admin user account   
 Remain logged in via your `admin_<name>` IAM account. You can use the IAM console or CloudShell to create:  
 + An `engineer` user group for individuals with read and write access to all S3 and Amazon Glue resources.  
 + A `scientist` user group for individuals with read and write access to specific S3 resources, EC2 instances, Amazon Sagemaker and Amazon ECS.   
