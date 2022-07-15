@@ -5,10 +5,12 @@
 Step 1: [Create AWS root user account](#create-aws-root-user-account)  
 Step 2: [Create an IAM admin user and user group via the root user account](#create-an-iam-admin-user-and-user-group-via-the-root-user-account)  
 Step 3: [Create more user groups via the IAM admin user account](#create-more-user-groups-via-the-iam-admin-user-account)  
+Step 4: [Create S3 buckets and bucket policies](#create-s3-buckets-and-bucket-policies)  
+Step 5: [Launch an EC2 instance](#launch-an-ec2-instance)
 
-This repository contains AWS CloudShell (bash) code snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).      
+This repository contains AWS console instructions and command line interface bash code snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).      
 
-**Note:** You are provided with a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be access at the top right panel via the ![](https://github.com/erikaduan/aws_notes/blob/main/figures/CloudShell_icon.svg) icon.  
+**Note:** You are provided with a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the ![](https://github.com/erikaduan/aws_notes/blob/main/figures/CloudShell_icon.svg) icon.  
 </br>
 
 
@@ -27,7 +29,7 @@ The first four tasks to complete in your root user account are to:
 3. [Enable AWS billing alerts and create an AWS billing alarm](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html).  
     + Navigate to the **AWS Billing console** and tick both **Receive Free Tier Usage Alerts** and **Receive Billing Alerts** and save preferences.  
     + Change the region to **US East (N. Virginia)** via `export AWS_REGION=us-east-1` in CloudShell. Billing metric data is stored in the **US East (N. Virginia)** region.  
-    +  Navigate to the **CloudWatch console** and create an alarm for **Billing -> Total estimated charge**. Link your alarm to a subscription topic following the instructions in the AWS document above. Confirm your topic subscription via email. An alert should now appear in **CloudWatch -> Alarms -> All alarms** as shown below.  
+    +  Navigate to the **CloudWatch console** and create an alarm for **Billing -> Total estimated charge**. Link your alarm to a subscription topic (supported by an AWS messaging service) following the instructions in the AWS document above. Confirm your topic subscription via email. An alert should now appear in **CloudWatch -> Alarms -> All alarms** as shown below.  
 
 ![](https://github.com/erikaduan/aws_notes/blob/main/figures/successful_billing_alert.png)  
 
@@ -80,24 +82,60 @@ The final task to complete in your root user account is to:
 
 You can now log into your IAM administrator account to create more IAM users, user groups, access policies and cloud resources.    
 
-**Note:** You can test whether your `admin` JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2`.    
+**Note:** You can test whether your `admin` JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2`.  
 </br> 
 
 
 # Create more user groups via the IAM admin user account   
 Remain logged in via your `admin_<name>` IAM account. You can use the IAM console or CloudShell to create:  
-+ An `engineer` user group for individuals with read and write access to all S3 and Amazon Glue resources.  
-+ A `scientist` user group for individuals with read and write access to specific S3 resources, EC2 instances, Amazon Sagemaker and Amazon ECS.   
++ An `engineer` user group for individuals with read and write access to all S3 and Amazon Glue resources.   
++ A `analyst` user group for individuals with read and write access to limited S3 resources, specific EC2 instances, Amazon Sagemaker and Amazon ECS.   
 
 To create an `engineer` user group:  
 1. #TODO 
 
-To create a `scientist` user group:  
+To create an `analyst` user group:  
 1. #TODO   
 
 **Note:** Refer to [this resource](https://medium.com/tensult/aws-policies-with-examples-8340661d35e9) for more AWS access policy examples.   
 </br>
 
 
-# Step 4: Launch different EC2 instances    
- 
+# Create S3 buckets and bucket policies  
+Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, JSON policy settings using `"Resource": "*"` or `"Action": "*"` are generally discouraged.   
+
+We will first create two S3 bucket resources, one for data ingress and egress from AWS and one for data usage inside AWS.  
+
+To create the S3 buckets, log into AWS as an IAM admin user:  
+1. [Create your first S3 bucket using the S3 console](https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-bucket.html) and click **Create bucket**.  
+2. This takes you to a new page where you need to assign a unique bucket name i.e. `<name>-landing-zone`, confirm your AWS region as `ap-southeast-2`, keep ACLs disabled under **Object Ownership**, block all public access under **Block Public Access settings for this bucket** , enable data object versioning under **Bucket Versioning** and enable server-side encryption using Amazon S3-managed keys under **Default encryption**.   
+3. Click **Create bucket**.   
+4. Repeat this process and assign another unique bucket name to a second S3 bucket i.e. `<name>-analysis`.  
+
+When ACLs are disabled, the bucket owner i.e. `admin_<name>` automatically owns and has full control over every object in the bucket. The IAM admin user can then create separate bucket policies for different user groups.    
+
+To create a `engineer` user group bucket policy:  
+1. #TODO  
+
+To create an `analyst` user group bucket policy:  
+1. #TODO    
+</br> 
+
+
+# Launch an EC2 instance    
++ EC2 instance types
+    + General purpose instances (small to medium datasets)
+    + Compute optimized instances (high CPU for modelling etc.)
+    + Memory optimized instances (large datasets need to be processed in-memory)
+    + Accelerated computing instances (GPUs?)
+    + Storage optimized instances  (data storage applications)
+
++ Elastic load balancing is based on a region and is used for EC2 scaling. Decoupled architecture from the front end and the back end. 
+
+Elastic Load Balancing (distributes incoming internet traffic) and Amazon EC2 Auto Scaling are separate services, they work together to help ensure that applications running in Amazon EC2 can provide high performance and availability  
+
+# Other notes 
+AWS EKS Amazon Elastic Kubernetes Service
+Test docket container 
+container orchestration tools 
+Test serverless compute via AWS lambda functions 
