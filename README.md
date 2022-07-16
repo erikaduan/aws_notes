@@ -10,8 +10,8 @@ Step 5: [Launch an EC2 instance](#launch-an-ec2-instance)
 
 This repository contains AWS console instructions and command line interface bash snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).  
 
->**Note** 
-> You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the |>_| icon.  
+>**Note**  
+> You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the **>_** icon.  
 </br>
 
 
@@ -47,13 +47,14 @@ The final task to complete in your root user account is to:
 2. Create an admin access policy named `admin_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. The condition `"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}` restricts all AWS resource access to only the Sydney region. Because AWS account management resources like IAM, AWS Cost Explorer, CloudTrail and CloudShell can only be accessed via the global region i.e. default `us-east-1` region, we also need to explicitly allow access to these resources. AWS documentation about the latter step can be accessed [here](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html).  
 
     <details><summary>JSON code</summary><p>  
-    ```yaml
+    
+    ```json  
     {
     "Version": "2012-10-17",
     "Statement": 
         [
             {
-                "Sid": "AccessAustralianResourcesOnly",
+                "Sid": "UseAustralianResourcesOnly",
                 "Effect": "Allow",
                 "Action": "*",
                 "Resource": "*",
@@ -66,6 +67,7 @@ The final task to complete in your root user account is to:
                 "Action": [
                     "iam:*",
                     "cloudshell:*",
+                    "access-analyzer:*",  
                     "aws-portal:ViewUsage",
                     "aws-portal:ViewBilling",
                     "aws-portal:ViewAccount"
@@ -75,7 +77,7 @@ The final task to complete in your root user account is to:
             }
         ]
     }
-    ```
+    ```  
     </p></details>
 
 3. Assign the `admin_access` policy to your previously created `admin` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access** or `aws iam attach-group-policy --group-name admin --policy-arn <admin_access arn>` in CloudShell.   
@@ -124,15 +126,20 @@ To create an `engineer` user group:
 2. Create an engineer access policy named `engineer_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `engineer` user group includes unrestricted access to Glue and unrestricted access to `arn:aws:s3:::<name>-landing-zone` and `arn:aws:s3:::<name>-analysis` S3 buckets. Resource and object ARNS need to be specified for `s3:GetObject` and `s3:PutObject` actions and `iam:PassRole` is required for `s3:CreateJob`. The JSON policy settings for enabling user security settings management are listed [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html).  
 
     <details><summary>JSON code</summary><p>  
-    ```yaml
+
+    ```json  
     {
     "Version": "2012-10-17",
     "Statement": 
         [
             {
-                "Sid": "AccessAWSGlue",
+                "Sid": "UseEngineeringResources",
                 "Effect": "Allow",
-                "Action": "glue:*",
+                "Action": [
+                    "ec2:*",
+                    "glue:*",
+                    "cloudshell:*"
+                    ]
                 "Resource": "*",
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
@@ -171,7 +178,7 @@ To create an `engineer` user group:
             },
 
             {
-                "Sid": "AccessAllS3Buckets",
+                "Sid": "UseAllS3Buckets",
                 "Effect": "Allow",
                 "Action": [
                     "s3:GetObject",
@@ -243,31 +250,33 @@ To create an `engineer` user group:
             }
         ]
     }
-    ```
+    ```  
     </p></details>
 
 3. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.   
 4. Create a new IAM user named `engineer_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.     
-5. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can upload and delete data objects and create S3 bucket access points for both `arn:aws:s3:::erika-landing-zone` and `arn:aws:s3:::erika-analysis`. 
-6. Upload a test dataset in `erika-landing-zone/raw` for future testing of `analyst_access` JSON policies.      
+5. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can access CloudShell, upload and delete data objects and create S3 bucket access points for both `arn:aws:s3:::erika-landing-zone` and `arn:aws:s3:::erika-analysis`.  
+6. Upload a test dataset in `arn:aws:s3:::erika-landing-zone/raw` for future testing of `analyst_access` JSON policies. Confirm that you can copy the test dataset into `arn:aws:s3:::erika-analysis` using `aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv` in CloudShell.  
 
 To create an `analyst` user group:  
 1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
 2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::erika-analysis` conditional on the source ARN being `arn:aws:s3:::erika-landing-zone` or `arn:aws:s3:::erika-analysis`.         
     <details><summary>JSON code</summary><p>  
-    ```yaml
+    
+    ```json   
     {
     "Version": "2012-10-17",
     "Statement": 
         [
             {
-                "Sid": "AccessDataScienceResources",
+                "Sid": "UseDataScienceResources",
                 "Effect": "Allow",
                 "Action": [
                     "ec2:*",
                     "ecs:*",
                     "lambda:*",
-                    "sagemaker:*"
+                    "sagemaker:*",
+                    "cloudshell:*"
                     ],
                 "Resource": "*",
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
@@ -308,7 +317,7 @@ To create an `analyst` user group:
             },
 
             {
-                "Sid": "GetLandingZoneS3Bucket",
+                "Sid": "GetAllS3Buckets",
                 "Effect": "Allow",
                 "Action": [
                     "s3:GetObject",
@@ -318,21 +327,7 @@ To create an `analyst` user group:
                     ],
                 "Resource": [
                     "arn:aws:s3:::erika-landing-zone",
-                    "arn:aws:s3:::erika-landing-zone/*"
-                    ], 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-
-            {
-                "Sid": "GetAnalysisS3Bucket",
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:GetObjectVersion", 
-                    "s3:GetObjectVersionAttributes",
-                    "s3:GetObjectAttributes"
-                    ],
-                "Resource": [
+                    "arn:aws:s3:::erika-landing-zone/*",
                     "arn:aws:s3:::erika-analysis",
                     "arn:aws:s3:::erika-analysis/*"
                     ], 
@@ -340,7 +335,18 @@ To create an `analyst` user group:
             },
 
             {
-                "Sid": "PutAnalysisS3BucketLimitedBySourceBuckets",
+                "Sid": "CreateFoldersInAnalysisS3Bucket",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:PutObject",
+                    "s3:DeleteObject"
+                    ],
+                "Resource": "arn:aws:s3:::erika-analysis/*/", 
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            }
+
+            {
+                "Sid": "PutAnalysisS3BucketLimitedBySource",
                 "Effect": "Allow",
                 "Action": [
                     "s3:PutObject",
@@ -351,7 +357,10 @@ To create an `analyst` user group:
                     "arn:aws:s3:::erika-analysis/*"
                     ], 
                 "Condition": {
-                    "ArnLike": {"aws:SourceArn": ["arn:aws:s3:::erika-landing-zone", "arn:aws:s3:::erika-analysis"]},
+                    "ForAnyValue:ArnLike": {"aws:SourceArn": [
+                        "arn:aws:s3:::erika-landing-zone",
+                        "arn:aws:s3:::erika-analysis"
+                        ]},  
                     "StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
         
@@ -408,15 +417,19 @@ To create an `analyst` user group:
             }
         ]
     }
-    ```
+    ```  
     </p></details>  
 
 3. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.   
 4. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.     
-5. Test that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that ... #TODO.   
+5. Test that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that you can only access but not upload data objects or create folders in `arn:aws:s3:::erika-landing-zone`. Confirm that you can create folders in `arn:aws:s3:::erika-analysis`. 
 
->**Note** 
-> You can also test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html).   
+#TODO aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv
+
+
+
+>**Note**  
+> You can test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html) and read more details about creating IAM policies with different S3 permissions [here](https://aws.amazon.com/blogs/security/writing-iam-policies-grant-access-to-user-specific-folders-in-an-amazon-s3-bucket/).  
 </br>
 
 
