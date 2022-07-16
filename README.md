@@ -5,7 +5,7 @@
 Step 1: [Create root user account](#create-root-user-account)  
 Step 2: [Create an IAM admin user and user group via the root user account](#create-an-iam-admin-user-and-user-group-via-the-root-user-account)  
 Step 3: [Create S3 buckets](#create-s3-buckets)  
-Step 4: [Create user groups with different S3 bucket access policies](#create-more-user-groups-via-the-iam-admin-user-account)  
+Step 4: [Create user groups with different S3 bucket access policies](#create-user-groups-with-different-s3-bucket-access-policies)  
 Step 5: [Launch an EC2 instance](#launch-an-ec2-instance)  
 
 This repository contains AWS console instructions and command line interface bash snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).  
@@ -82,8 +82,11 @@ The final task to complete in your root user account is to:
 
 You can now log into your IAM administrator account to create more IAM users, user groups, access policies and cloud resources.  
 
-**Note:** Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` are discouraged.    
-**Note:** You can test whether your `admin` JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2` as user `admin_<name>`.   
+>**Note** 
+> Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` are discouraged.    
+
+>**Note** 
+> You can test whether your `admin` JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2` as user `admin_<name>`.   
 </br> 
 
 
@@ -98,8 +101,11 @@ To create the S3 buckets, log into AWS as an IAM admin user:
 
 When ACLs are disabled, the bucket owner i.e. `admin_<name>` automatically owns and has full control over every object in the bucket. The IAM admin user can then create separate bucket policies for different user groups.   
 
-**Note:** It is essential to block all public access settings to S3 buckets.   
-**Note:** You can also manage data access at the level of S3 bucket folders as described [here](https://docs.aws.amazon.com/AmazonS3/latest/userguide/walkthrough1.html#walkthrough-background1).    
+>**Note** 
+> It is essential to block all public access settings to S3 buckets.   
+
+>**Note**  
+> You can also manage data access at the level of S3 bucket folders as described [here](https://docs.aws.amazon.com/AmazonS3/latest/userguide/walkthrough1.html#walkthrough-background1).    
 </br>   
 
 
@@ -155,7 +161,7 @@ To create an `engineer` user group:
                     "s3:GetBucketPolicy",
                     "s3:GetBucketLogging",
                     "s3:GetBucketNotification",
-                    "s3:GetEncryptionConfiguration",
+                    "s3:GetEncryptionConfiguration"
                     ],
                 "Resource": "*", 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
@@ -236,18 +242,176 @@ To create an `engineer` user group:
     }
     ```
 
-    3. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.   
-    4. Create a new IAM user named `engineer_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.     
-    5. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can upload and delete data objects and create S3 bucket access points for both `arn:aws:s3:::erika-landing-zone` and `arn:aws:s3:::erika-analysis`.    
+3. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.   
+4. Create a new IAM user named `engineer_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.     
+5. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can upload and delete data objects and create S3 bucket access points for both `arn:aws:s3:::erika-landing-zone` and `arn:aws:s3:::erika-analysis`. 
+6. Upload a test dataset in `erika-landing-zone/raw` for future testing of `analyst_access` JSON policies.      
 
 To create an `analyst` user group:  
 1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
-2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.  
+2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::erika-analysis` conditional on the source ARN being `arn:aws:s3:::erika-landing-zone` or `arn:aws:s3:::erika-analysis`.         
 
     ```
+    {
+    "Version": "2012-10-17",
+    "Statement": 
+        [
+            {
+                "Sid": "AccessDataScienceResources",
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:*",
+                    "ecs:*",
+                    "lambda:*",
+                    "sagemaker:*"
+                    ],
+                "Resource": "*",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
+            
+            {
+                "Sid": "AccessAllS3Settings",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListAllMyBuckets",
+                    "s3:ListBucket",
+                    "s3:ListBucketVersions",
+                    "s3:GetBucketVersioning",
+                    "s3:GetBucketPolicyStatus",
+                    "s3:GetBucketPublicAccessBlock",
+                    "s3:GetAccountPublicAccessBlock",
+                    "s3:GetBucketAcl",
+                    "s3:GetObjectAcl",
+                    "s3:ListAccessPointsForObjectLambda",
+                    "s3:ListBucketMultipartUploads",
+                    "s3:ListAccessPoints",
+                    "s3:GetAccessPoint",
+                    "s3:CreateAccessPoint",
+                    "s3:ListJobs",
+                    "s3:CreateJob",
+                    "s3:ListStorageLensConfigurations",
+                    "s3:PutStorageLensConfiguration",
+                    "s3:ListMultipartUploadParts",
+                    "s3:ListMultiRegionAccessPoints",
+                    "s3:GetBucketPolicy",
+                    "s3:GetBucketLogging",
+                    "s3:GetBucketNotification",
+                    "s3:GetBucketLocation",
+                    "s3:GetEncryptionConfiguration"
+                    ],
+                "Resource": "*", 
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
+
+            {
+                "Sid": "GetLandingZoneS3Bucket",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:GetObject",
+                    "s3:GetObjectVersion", 
+                    "s3:GetObjectVersionAttributes",
+                    "s3:GetObjectAttributes"
+                    ],
+                "Resource": [
+                    "arn:aws:s3:::erika-landing-zone",
+                    "arn:aws:s3:::erika-landing-zone/*"
+                    ], 
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
+
+            {
+                "Sid": "GetAnalysisS3Bucket",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:GetObject",
+                    "s3:GetObjectVersion", 
+                    "s3:GetObjectVersionAttributes",
+                    "s3:GetObjectAttributes"
+                    ],
+                "Resource": [
+                    "arn:aws:s3:::erika-analysis",
+                    "arn:aws:s3:::erika-analysis/*"
+                    ], 
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
+
+            {
+                "Sid": "PutAnalysisS3BucketLimitedBySourceBuckets",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:PutObject",
+                    "s3:DeleteObject"
+                    ],
+                "Resource": [
+                    "arn:aws:s3:::erika-analysis",
+                    "arn:aws:s3:::erika-analysis/*"
+                    ], 
+                "Condition": {
+                    "ArnLike": {"aws:SourceArn": ["arn:aws:s3:::erika-landing-zone", "arn:aws:s3:::erika-analysis"]},
+                    "StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
+        
+            {
+                "Sid": "UseConsole",
+                "Effect": "Allow",
+                "Action": [
+                    "cloudshell:*",
+                    "iam:PassRole",
+                    "aws-portal:ViewUsage",
+                    "aws-portal:ViewBilling",
+                    "aws-portal:ViewAccount",
+                    "iam:GetAccountPasswordPolicy",
+                    "iam:ListMFADevices",
+                    "iam:ListPolicies"
+                    ],
+                "Resource": "*",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+            },
+            
+            {
+                "Sid": "ManageOwnVirtualMFADevice",
+                "Effect": "Allow",
+                "Action": [
+                    "iam:CreateVirtualMFADevice",
+                    "iam:DeleteVirtualMFADevice"
+                    ],
+                "Resource": "arn:aws:iam::*:mfa/${aws:username}",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+            },
+
+            {
+                "Sid": "ManageOwnSecurityCredentials",
+                "Effect": "Allow",
+                "Action": [
+                    "iam:DeactivateMFADevice",
+                    "iam:EnableMFADevice",
+                    "iam:ListMFADevices",
+                    "iam:ResyncMFADevice",
+                    "iam:CreateServiceSpecificCredential",
+                    "iam:DeleteServiceSpecificCredential",
+                    "iam:ListServiceSpecificCredentials",
+                    "iam:ResetServiceSpecificCredential",
+                    "iam:UpdateServiceSpecificCredential",
+                    "iam:CreateAccessKey",
+                    "iam:DeleteAccessKey",
+                    "iam:ListAccessKeys",
+                    "iam:UpdateAccessKey",
+                    "iam:ChangePassword",
+                    "iam:GetUser"
+                    ],
+                "Resource": "arn:aws:iam::*:user/${aws:username}",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+            }
+        ]
+    }
     ```
 
-**Note:** Refer to [this resource](https://medium.com/tensult/aws-policies-with-examples-8340661d35e9) for more AWS access policy examples.   
+3. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.   
+4. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.     
+5. Test that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that ... #TODO.   
+
+>**Note** 
+> You can also test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html).   
 </br>
 
 
