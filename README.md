@@ -46,7 +46,8 @@ The final task to complete in your root user account is to:
 1. Create a new user group named `admin` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name admin` in CloudShell.  
 2. Create an admin access policy named `admin_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. The condition `"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}` restricts all AWS resource access to only the Sydney region. Because AWS account management resources like IAM, AWS Cost Explorer, CloudTrail and CloudShell can only be accessed via the global region i.e. default `us-east-1` region, we also need to explicitly allow access to these resources. AWS documentation about the latter step can be accessed [here](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html).  
 
-    ```
+    <details><summary>JSON code</summary><p>  
+    ```json
     {
     "Version": "2012-10-17",
     "Statement": 
@@ -75,6 +76,7 @@ The final task to complete in your root user account is to:
         ]
     }
     ```
+    </p></details>
 
 3. Assign the `admin_access` policy to your previously created `admin` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access** or `aws iam attach-group-policy --group-name admin --policy-arn <admin_access arn>` in CloudShell.   
 4. Create a new IAM user named `admin_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `admin` user group.  Alternatively, use `aws iam create-user --user-name admin_<name>`, then `aws iam create-login-profile --user-name admin_<name> --password <password>` and then `aws iam add-user-to-group --group-name admin --user-name admin_<name>` in CloudShell.    
@@ -121,7 +123,8 @@ To create an `engineer` user group:
 1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.  
 2. Create an engineer access policy named `engineer_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `engineer` user group includes unrestricted access to Glue and unrestricted access to `arn:aws:s3:::<name>-landing-zone` and `arn:aws:s3:::<name>-analysis` S3 buckets. Resource and object ARNS need to be specified for `s3:GetObject` and `s3:PutObject` actions and `iam:PassRole` is required for `s3:CreateJob`. The JSON policy settings for enabling user security settings management are listed [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html).  
 
-    ```
+    <details><summary>JSON code</summary><p>  
+    ```json
     {
     "Version": "2012-10-17",
     "Statement": 
@@ -241,6 +244,7 @@ To create an `engineer` user group:
         ]
     }
     ```
+    </p></details>
 
 3. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.   
 4. Create a new IAM user named `engineer_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.     
@@ -251,7 +255,7 @@ To create an `analyst` user group:
 1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
 2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::erika-analysis` conditional on the source ARN being `arn:aws:s3:::erika-landing-zone` or `arn:aws:s3:::erika-analysis`.         
     <details><summary>JSON code</summary><p>  
-    ```
+    ```json
     {
     "Version": "2012-10-17",
     "Statement": 
@@ -406,6 +410,7 @@ To create an `analyst` user group:
     }
     ```
     </p></details>  
+
 3. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.   
 4. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.     
 5. Test that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that ... #TODO.   
