@@ -10,7 +10,8 @@ Step 5: [Launch an EC2 instance](#launch-an-ec2-instance)
 
 This repository contains AWS console instructions and command line interface bash snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).  
 
-**Note:** You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the ![](https://github.com/erikaduan/aws_notes/blob/main/figures/CloudShell_icon.svg) icon.  
+>**Note** 
+> You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the ![](/figures/CloudShell_icon.svg) icon.  
 </br>
 
 
@@ -82,7 +83,6 @@ The final task to complete in your root user account is to:
 You can now log into your IAM administrator account to create more IAM users, user groups, access policies and cloud resources.  
 
 **Note:** Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` are discouraged.    
-
 **Note:** You can test whether your `admin` JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2` as user `admin_<name>`.   
 </br> 
 
@@ -99,7 +99,6 @@ To create the S3 buckets, log into AWS as an IAM admin user:
 When ACLs are disabled, the bucket owner i.e. `admin_<name>` automatically owns and has full control over every object in the bucket. The IAM admin user can then create separate bucket policies for different user groups.   
 
 **Note:** It is essential to block all public access settings to S3 buckets.   
-
 **Note:** You can also manage data access at the level of S3 bucket folders as described [here](https://docs.aws.amazon.com/AmazonS3/latest/userguide/walkthrough1.html#walkthrough-background1).    
 </br>   
 
@@ -110,7 +109,7 @@ Log in via your `admin_<name>` IAM account to create more user groups. You can u
 + A `analyst` user group for individuals with `GET` access to specific S3 buckets and `GET` and `PUT` access to EC2 instances, Sagemaker, ECS and EKS.   
 
 We ideally want to separate data engineering and data analysis work components by S3 bucket access policies. When accessing AWS from a private external environment, we would also want to restrict data migration tasks to a limited group of individuals i.e. the `engineer` user group.   
-![](https://github.com/erikaduan/aws_notes/blob/main/figures/aws_iam_policies.svg)  
+![](https://github.com/erikaduan/aws_notes/blob/main/figures/aws_s3_access.svg)  
 
 To create an `engineer` user group:  
 1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.  
@@ -243,7 +242,10 @@ To create an `engineer` user group:
 
 To create an `analyst` user group:  
 1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
-2. Create an admin access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. 
+2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.  
+
+    ```
+    ```
 
 **Note:** Refer to [this resource](https://medium.com/tensult/aws-policies-with-examples-8340661d35e9) for more AWS access policy examples.   
 </br>
