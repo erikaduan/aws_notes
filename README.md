@@ -11,7 +11,7 @@ Step 5: [Launch an EC2 instance](#launch-an-ec2-instance)
 This repository contains AWS console instructions and command line interface bash snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).  
 
 >**Note** 
-> You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the ![](/figures/CloudShell_icon.svg) icon.  
+> You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the |>_| icon.  
 </br>
 
 
@@ -31,7 +31,7 @@ The first four tasks to complete in your root user account are to:
     + Change the region to **US East (N. Virginia)** via `export AWS_REGION=us-east-1` in CloudShell. Billing metric data is stored in the **US East (N. Virginia)** region.  
     + Navigate to the **CloudWatch console** and create an alarm for **Billing -> Total estimated charge**. Link your alarm to a subscription topic (supported by an AWS messaging service). Confirm your topic subscription via email. An alert should now appear in **CloudWatch -> Alarms -> All alarms** as shown below.  
 
-![](https://github.com/erikaduan/aws_notes/blob/main/figures/successful_billing_alert.png)  
+![](/figures/successful_billing_alert.png)  
 
 4. Set your default region via `export AWS_REGION=ap-southeast-2` and check your AWS configuration via `aws configure list` in CloudShell.   
 </br>
@@ -40,7 +40,7 @@ The first four tasks to complete in your root user account are to:
 # Create an IAM admin user and user group via the root user account   
 [AWS recommends the creation of managed policies rather than inline policies to control user access to AWS resources.](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) Managed policies can be attached to multiple users or user groups and governance is controlled around maintaining a central library of AWS policies. Policy changes automatically apply for all associated users or user groups. Inline policies should only be used when you want to maintain strict one-to-one relationships between a policy and a single AWS identity. 
 
-![](https://github.com/erikaduan/aws_notes/blob/main/figures/aws_iam_policies.svg)  
+![](/figures/aws_iam_policies.svg)  
 
 The final task to complete in your root user account is to:
 1. Create a new user group named `admin` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name admin` in CloudShell.  
@@ -109,7 +109,7 @@ Log in via your `admin_<name>` IAM account to create more user groups. You can u
 + A `analyst` user group for individuals with `GET` access to specific S3 buckets and `GET` and `PUT` access to EC2 instances, Sagemaker, ECS and EKS.   
 
 We ideally want to separate data engineering and data analysis work components by S3 bucket access policies. When accessing AWS from a private external environment, we would also want to restrict data migration tasks to a limited group of individuals i.e. the `engineer` user group.   
-![](https://github.com/erikaduan/aws_notes/blob/main/figures/aws_s3_access.svg)  
+![](/figures/aws_s3_access.svg)  
 
 To create an `engineer` user group:  
 1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.  
