@@ -250,7 +250,7 @@ To create an `engineer` user group:
 To create an `analyst` user group:  
 1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
 2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::erika-analysis` conditional on the source ARN being `arn:aws:s3:::erika-landing-zone` or `arn:aws:s3:::erika-analysis`.         
-<details><summary>JSON code</summary>
+    <details><summary>JSON code</summary><p>  
     ```
     {
     "Version": "2012-10-17",
@@ -405,7 +405,7 @@ To create an `analyst` user group:
         ]
     }
     ```
-</details>
+    </p></details>  
 3. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.   
 4. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.     
 5. Test that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that ... #TODO.   
