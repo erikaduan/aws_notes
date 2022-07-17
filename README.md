@@ -3,10 +3,11 @@
 ![](https://img.shields.io/badge/Language-Bash-blue) ![](https://img.shields.io/badge/Language-Python-blue)  
 
 Step 1: [Create root user account](#create-root-user-account)  
-Step 2: [Create an IAM admin user and user group via the root user account](#create-an-iam-admin-user-and-user-group-via-the-root-user-account)  
-Step 3: [Create S3 buckets and S3 bucket access points ](#create-s3-buckets-and-s3-bucket-access-points)  
-Step 4: [Create user groups with different S3 bucket access policies](#create-user-groups-with-different-s3-bucket-access-policies)  
-Step 5: [Launch an EC2 instance](#launch-an-ec2-instance)  
+Step 2: [Create an IAM admin user group and user](#create-an-iam-admin-user-group-and-user)   
+Step 3: [Create more IAM user groups and users](#create-more-iam-user-groups-and-users)  
+Step 4: [Create S3 buckets and S3 bucket access points ](#create-s3-buckets-and-s3-bucket-access-points)  
+Step 5: [Create different IAM policies for different user groups](#create-different-iam-policies-for-different-user-groups)  
+Step 6: [Launch an EC2 instance](#launch-an-ec2-instance)  
 
 This repository contains AWS console instructions and command line interface bash snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).  
 
@@ -37,7 +38,7 @@ The first four tasks to complete in your root user account are to:
 </br>
 
 
-# Create an IAM admin user and user group via the root user account   
+# Create an IAM admin user group and user     
 [AWS recommends the creation of managed policies rather than inline policies to control user access to AWS resources.](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) Managed policies can be attached to multiple users or user groups and governance is controlled around maintaining a central library of AWS policies. Policy changes automatically apply for all associated users or user groups. Inline policies should only be used when you want to maintain strict one-to-one relationships between a policy and a single AWS identity. 
 
 ![](/figures/aws_iam_policies.svg)  
@@ -94,6 +95,21 @@ You can now log into your IAM administrator account to create more IAM users, us
 </br> 
 
 
+# Create more IAM user groups and users   
+Log in via your `admin_<name>` IAM account to create more user groups. You can use the IAM console or CloudShell to create:  
++ An `engineer` user group for individuals with `GET` and `PUT` access to all S3 and Glue resources.   
++ A `analyst` user group for individuals with `GET` access to all S3 buckets and `PUT` access for objects from specific S3 access points. This user group also has `GET` and `PUT` access to all EC2 instances, Sagemaker, Lambda and ECS.     
+
+To create an `engineer` user group:  
+1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.   
+2. Create a new IAM user named `engineer_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.   
+
+To create an `analyst` user group:  
+1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
+2. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.  
+</br> 
+
+
 # Create S3 buckets and S3 bucket access points      
 We will first create two S3 bucket resources, one for data ingress and egress from AWS and one for data access inside AWS.  
 
@@ -113,10 +129,10 @@ To create the S3 buckets, log into AWS as an IAM admin user:
         [
             {
                 "Effect": "Allow",
-                "Principal" : { "AWS": "arn_user_analyst_<name>" },
+                "Principal" : {"AWS": "arn-user-analyst-<name>"},
                 "Action" : "s3:*",
-                "Resource" : "<access-point-arn-for-erika-landing-zone>",
-                "Condition": {"StringEquals": { "s3:DataAccessPointAccount": "<aws_account_id>" }}
+                "Resource" : "<access-point-arn>-erika-landing-zone",
+                "Condition": {"StringEquals": {"s3:DataAccessPointAccount": "<aws-account-id>"}}
             }
         ]
     }
@@ -135,17 +151,12 @@ When ACLs are disabled, the bucket owner i.e. `admin_<name>` automatically owns 
 </br>   
 
 
-# Create user groups with different S3 bucket access policies    
-Log in via your `admin_<name>` IAM account to create more user groups. You can use the IAM console or CloudShell to create:  
-+ An `engineer` user group for individuals with `GET` and `PUT` access to all S3 and Glue resources.   
-+ A `analyst` user group for individuals with `GET` access to all S3 buckets and `PUT` access for objects from specific S3 access points. This user group also has `GET` and `PUT` access to all EC2 instances, Sagemaker, Lambda and ECS.     
-
-We ideally want to separate data engineering and data analysis work components using IAM user group-based policies. When accessing AWS from a private external environment, we need to restrict data migration tasks to a limited group of individuals i.e. the `engineer` user group.    
+# Create different IAM policies for different user groups    
+We ideally want to separate data engineering and data analysis work components using IAM user group policies. When accessing AWS from a private external environment, we might want to restrict data migration tasks to a limited group of individuals i.e. the `engineer` user group. We might also want to restrict data uploads by the `analyst` user group to existing S3 data objects.     
 ![](/figures/aws_s3_access.svg)  
 
-To create an `engineer` user group:  
-1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.  
-2. Create an engineer access policy named `engineer_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `engineer` user group includes unrestricted access to Glue and unrestricted access to `arn:aws:s3:::<name>-landing-zone` and `arn:aws:s3:::<name>-analysis` S3 buckets. Resource and object ARNS need to be specified for `s3:GetObject` and `s3:PutObject` actions and `iam:PassRole` is required for `s3:CreateJob`. The JSON policy settings for enabling user security settings management are listed [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html).  
+To create an `engineer` user group IAM policy:  
+1. Create an engineer access policy named `engineer_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.  
 
     <details><summary>JSON code</summary><p>  
 
@@ -225,9 +236,9 @@ To create an `engineer` user group:
                 "Action": "s3:PutObject",
                 "Resource": [
                     "arn:aws:s3:::erika-landing-zone",
+                    "arn:aws:s3:::erika-landing-zone/*",
                     "arn:aws:s3:::erika-analysis/*",
-                    "arn:aws:s3:::erika-analysis",
-                    "arn:aws:s3:::erika-landing-zone/*"
+                    "arn:aws:s3:::erika-analysis"
                     ],
                 "Condition": {"Null": {"s3:x-amz-server-side-encryption": true}}
             },
@@ -288,15 +299,17 @@ To create an `engineer` user group:
     ```  
     </p></details>
 
-3. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.   
-4. Create a new IAM user named `engineer_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.     
-5. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can access CloudShell, upload and delete data objects and create S3 bucket access points for both `arn:aws:s3:::erika-landing-zone` and `arn:aws:s3:::erika-analysis`.  
-6. Upload a test dataset in `arn:aws:s3:::erika-landing-zone/raw` for future testing of `analyst_access` JSON policies. Confirm that you can copy the test dataset with encryption into `arn:aws:s3:::erika-analysis` using `aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv --sse AES256` in CloudShell. 
-7. Confirm that unencrypted data uploads are denied i.e. `aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv` fails in CloudShell.  
+    > **Note**   
+    > AWS resource access for the `engineer` user group includes unrestricted access to Glue and all S3 buckets. Both resource and object ARNS need to be specified for `s3:GetObject` and `s3:PutObject` actions. The action `iam:PassRole` is required for `s3:CreateJob`. [User security management](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html) should also be enabled.    
+
+2. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.      
+3. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can access CloudShell, upload and delete data objects and create S3 bucket access points.  
+4. Upload a test dataset in `arn:aws:s3:::erika-landing-zone/raw` for testing of `analyst_access` JSON policies. Confirm that you can copy the test dataset with encryption into `arn:aws:s3:::erika-analysis` using `aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv --sse AES256` in CloudShell.  
+5. Confirm that unencrypted data uploads are denied i.e. `aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv` fails in CloudShell.   
 
 To create an `analyst` user group:  
-1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
-2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor. AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::erika-analysis` conditional on the access points belonging to only `arn:aws:s3:::erika-landing-zone` and  `arn:aws:s3:::erika-analysis`.         
+1. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.   
+
     <details><summary>JSON code</summary><p>  
     
     ```json   
@@ -364,10 +377,10 @@ To create an `analyst` user group:
                 "Resource": [
                     "arn:aws:s3:::erika-landing-zone",
                     "arn:aws:s3:::erika-landing-zone/*",
-                    "<access-point-arn-for-erika-landing-zone>",
+                    "<access-point-arn>-erika-landing-zone>",
                     "arn:aws:s3:::erika-analysis",
                     "arn:aws:s3:::erika-analysis/*",
-                    "<access-point-arn-for-erika-landing-zone>"
+                    "<access-point-arn>-erika-analysis>"
                     ], 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
@@ -405,8 +418,8 @@ To create an `analyst` user group:
                 "Condition": {
                     "StringEquals": {"aws:RequestedRegion": "ap-southeast-2"},
                     "ForAnyValue:StringEquals": {"s3:DataAccessPointArn": [
-                        "<access-point-arn-for-erika-landing-zone>",
-                        "<access-point-arn-for-erika-analysis>"
+                        "<access-point-arn>-erika-landing-zone>",
+                        "<access-point-arn>-erika-analysis>"
                         ]}  
                     }
             },
@@ -480,17 +493,15 @@ To create an `analyst` user group:
     ```  
     </p></details>  
 
-3. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.   
-4. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.     
-5. Confirm that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that you can open but not create new encrypted data objects or folders in `arn:aws:s3:::erika-landing-zone`. Confirm that you can create and delete encrypted folders in `arn:aws:s3:::erika-analysis`.  
-6. Confirm that 
+    >**Note**  
+    > AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::erika-analysis` conditional on the source access points being `<access-point-arn-for-erika-landing-zone>` or `<access-point-arn-for-erika-landing-zone>`.  
 
-#TODO aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv
-
-
+2. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.        
+3. Confirm that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that you can open but not create new encrypted data objects or folders in `arn:aws:s3:::erika-landing-zone`. Confirm that you can create and delete encrypted folders in `arn:aws:s3:::erika-analysis`.  
+4. Confirm that # TODO
 
 >**Note**  
-> You can test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html) and read more details about creating IAM policies with different S3 permissions [here](https://aws.amazon.com/blogs/security/writing-iam-policies-grant-access-to-user-specific-folders-in-an-amazon-s3-bucket/).  
+> You can test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html) and read more details about creating IAM policies with different S3 permissions [here](https://aws.amazon.com/blogs/security/writing-iam-policies-grant-access-to-user-specific-folders-in-an-amazon-s3-bucket/).   
 </br>
 
 
