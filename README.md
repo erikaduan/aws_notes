@@ -503,9 +503,9 @@ To test our IAM policies, we can also run the following tests in CloudShell from
 
 | CLI test      | engineer | analyst |  
 | ------------- | -------- | ------- |  
-| `echo "hello world" | aws s3 cp - s3://erika-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |  
+| `echo "hello world" \| aws s3 cp - s3://erika-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |  
 | `aws s3 ls s3://erika-landing-zone/test/`  | Content Cell  | :heavy_check_mark: |  |    
-| `echo "hello world" | aws s3 cp - s3://erika-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: |  |  
+| `echo "hello world" \| aws s3 cp - s3://erika-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: |  |  
 | `aws s3 ls s3://erika-analysis/test/` | :heavy_check_mark:  |     |   
 | `aws s3 rm s3://erika-analysis/test --recursive` | :heavy_check_mark:  |     |     
 | `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt --sse AES256` | :heavy_check_mark: | 
