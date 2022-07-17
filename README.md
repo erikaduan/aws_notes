@@ -503,15 +503,15 @@ To test our IAM policies, we can also run the following tests in CloudShell from
 
 | CLI test      | engineer | analyst |  
 | ------------- | -------- | ------- |  
-| `echo "hello world" \| aws s3 cp - s3://erika-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |  
-| `aws s3 ls s3://erika-landing-zone/test/`  | Content Cell  | :heavy_check_mark: |  |    
-| `echo "hello world" \| aws s3 cp - s3://erika-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: |  |  
-| `aws s3 ls s3://erika-analysis/test/` | :heavy_check_mark:  |     |   
-| `aws s3 rm s3://erika-analysis/test --recursive` | :heavy_check_mark:  |     |     
-| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt --sse AES256` | :heavy_check_mark: | 
-| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt` | :x: | |  
+| `echo "hello world" \| aws s3 cp - s3://erika-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |   
+| `aws s3 ls s3://erika-landing-zone/test/`  | :heavy_check_mark:  | :heavy_check_mark: |     
+| `echo "hello world" \| aws s3 cp - s3://erika-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |     
+| `aws s3 ls s3://erika-analysis/test/` | :heavy_check_mark:  | :heavy_check_mark: |     
+| `aws s3 rm s3://erika-analysis/test --recursive` | :heavy_check_mark:  |  |       
+| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt --sse AES256` | :heavy_check_mark: |    
+| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt` | :x: | Currently failing |    
 
-The use of `--recursive` deletes the S3 bucket folder as well as its data object contents.   
+The use of `--recursive` deletes the S3 bucket folder as well as its data object contents.    
 
 >**Note**  
 > You can also test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html) and read more details about creating IAM policies with different S3 permissions [here](https://aws.amazon.com/blogs/security/writing-iam-policies-grant-access-to-user-specific-folders-in-an-amazon-s3-bucket/).   
