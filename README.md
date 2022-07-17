@@ -155,7 +155,7 @@ When ACLs are disabled, the bucket owner i.e. `admin_<name>` automatically owns 
 We ideally want to separate data engineering and data analysis work components using IAM user group policies. When accessing AWS from a private external environment, we might want to restrict data migration tasks to a limited group of individuals i.e. the `engineer` user group. We might also want to restrict data uploads by the `analyst` user group to existing S3 data objects.     
 ![](/figures/aws_s3_access.svg)  
 
-To create an `engineer` user group IAM policy:  
+## Create an `engineer_access` IAM policy    
 1. Create an engineer access policy named `engineer_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.  
 
     <details><summary>JSON code</summary><p>  
@@ -304,10 +304,10 @@ To create an `engineer` user group IAM policy:
 
 2. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.      
 3. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can access CloudShell, upload and delete data objects and create S3 bucket access points.  
-4. Upload a test dataset in `arn:aws:s3:::erika-landing-zone/raw` for testing of `analyst_access` JSON policies. Confirm that you can copy the test dataset with encryption into `arn:aws:s3:::erika-analysis` using `aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv --sse AES256` in CloudShell.  
-5. Confirm that unencrypted data uploads are denied i.e. `aws s3 cp s3://erika-landing-zone/raw/labour_force_raw.csv s3://erika-analysis/labour_force_raw.csv` fails in CloudShell.   
+4. Upload a test dataset in `arn:aws:s3:::erika-landing-zone/raw` for testing of `analyst_access` JSON policies. Confirm that you can copy the test dataset with encryption into `arn:aws:s3:::erika-analysis` using `aws s3 cp s3://erika-landing-zone/raw/test.csv s3://erika-analysis/test.csv --sse AES256` in CloudShell.  
+5. Confirm that unencrypted data uploads are denied i.e. `aws s3 cp s3://erika-landing-zone/raw/test.csv s3://erika-analysis/test.csv` fails in CloudShell.   
 
-To create an `analyst` user group:  
+## Create an `analyst_access` IAM policy  
 1. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.   
 
     <details><summary>JSON code</summary><p>  
@@ -377,10 +377,8 @@ To create an `analyst` user group:
                 "Resource": [
                     "arn:aws:s3:::erika-landing-zone",
                     "arn:aws:s3:::erika-landing-zone/*",
-                    "<access-point-arn>-erika-landing-zone>",
                     "arn:aws:s3:::erika-analysis",
-                    "arn:aws:s3:::erika-analysis/*",
-                    "<access-point-arn>-erika-analysis>"
+                    "arn:aws:s3:::erika-analysis/*"
                     ], 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
@@ -498,10 +496,25 @@ To create an `analyst` user group:
 
 2. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.        
 3. Confirm that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that you can open but not create new encrypted data objects or folders in `arn:aws:s3:::erika-landing-zone`. Confirm that you can create and delete encrypted folders in `arn:aws:s3:::erika-analysis`.  
-4. Confirm that # TODO
+4. Confirm that # TODO  
+
+## CLI tests for engineer and analyst user groups   
+To test our IAM policies, we can also run the following tests in CloudShell from the `<name>_engineer` and `<name>_analyst` IAM user accounts.  
+
+| CLI test      | engineer | analyst |  
+| ------------- | -------- | ------- |  
+| `echo "hello world" | aws s3 cp - s3://erika-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |  
+| `aws s3 ls s3://erika-landing-zone/test/`  | Content Cell  | :heavy_check_mark: |  |    
+| `echo "hello world" | aws s3 cp - s3://erika-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: |  |  
+| `aws s3 ls s3://erika-analysis/test/` | :heavy_check_mark:  |     |   
+| `aws s3 rm s3://erika-analysis/test --recursive` | :heavy_check_mark:  |     |     
+| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt --sse AES256` | :heavy_check_mark: | 
+| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt` | :x: | |  
+
+The use of `--recursive` deletes the S3 bucket folder as well as its data object contents.   
 
 >**Note**  
-> You can test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html) and read more details about creating IAM policies with different S3 permissions [here](https://aws.amazon.com/blogs/security/writing-iam-policies-grant-access-to-user-specific-folders-in-an-amazon-s3-bucket/).   
+> You can also test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html) and read more details about creating IAM policies with different S3 permissions [here](https://aws.amazon.com/blogs/security/writing-iam-policies-grant-access-to-user-specific-folders-in-an-amazon-s3-bucket/).   
 </br>
 
 
