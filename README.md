@@ -12,7 +12,7 @@ Step 6: [Launch an EC2 instance](#launch-an-ec2-instance)
 This repository contains AWS console instructions and command line interface bash snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).  
 
 >**Note**  
-> You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the **>_** icon.  
+> You are provided with both a management console (i.e. GUI) or command line option to perform operations inside AWS. The command line interface, also called CloudShell, can be accessed at the top right panel via the **>_** icon. AWS can also be accessed using the Python software development kit (SDK) [`boto3`](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).   
 </br>
 
 
@@ -81,8 +81,8 @@ The final task to complete in your root user account is to:
     ```  
     </p></details>
 
-3. Assign the `admin_access` policy to your previously created `admin` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access** or `aws iam attach-group-policy --group-name admin --policy-arn <admin_access arn>` in CloudShell.   
-4. Create a new IAM user named `admin_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `admin` user group.  Alternatively, use `aws iam create-user --user-name admin_<name>`, then `aws iam create-login-profile --user-name admin_<name> --password <password>` and then `aws iam add-user-to-group --group-name admin --user-name admin_<name>` in CloudShell.    
+3. Assign the `admin_access` policy to your previously created `admin` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access** or `aws iam attach-group-policy --group-name admin --policy-arn <admin-access-arn>` in CloudShell.   
+4. Create a new IAM user named `admin-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `admin` user group.  Alternatively, use `aws iam create-user --user-name admin-<name>`, then `aws iam create-login-profile --user-name admin-<name> --password <password>` and then `aws iam add-user-to-group --group-name admin --user-name admin-<name>` in CloudShell.    
 5. [Activate IAM admin user access to the AWS Billing console](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/control-access-billing.html) by navigating to **Account -> IAM User and Role Access to Billing Information -> Edit -> Activate IAM Access**.  
 
 You can now log into your IAM administrator account to create more IAM users, user groups, access policies and cloud resources.  
@@ -91,22 +91,22 @@ You can now log into your IAM administrator account to create more IAM users, us
 > Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` are discouraged.    
 
 >**Note** 
-> You can test whether your `admin` JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2` as user `admin_<name>`.   
+> You can test whether your `admin` JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2` as user `admin-<name>`.   
 </br> 
 
 
 # Create more IAM user groups and users   
-Log in via your `admin_<name>` IAM account to create more user groups. You can use the IAM console or CloudShell to create:  
+Log in via your `admin-<name>` IAM account to create more user groups. You can use the IAM console or CloudShell to create:  
 + An `engineer` user group for individuals with `GET` and `PUT` access to all S3 and Glue resources.   
 + A `analyst` user group for individuals with `GET` access to all S3 buckets and `PUT` access for objects from specific S3 access points. This user group also has `GET` and `PUT` access to all EC2 instances, Sagemaker, Lambda and ECS.     
 
 To create an `engineer` user group:  
 1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.   
-2. Create a new IAM user named `engineer_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.   
+2. Create a new IAM user named `engineer-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.   
 
 To create an `analyst` user group:  
 1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
-2. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.  
+2. Create a new IAM user named `analyst-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.  
 </br> 
 
 
@@ -118,7 +118,7 @@ To create the S3 buckets, log into AWS as an IAM admin user:
 2. This takes you to a new page where you need to assign a unique bucket name i.e. `<name>-landing-zone`, confirm your AWS region as `ap-southeast-2`, keep ACLs disabled under **Object Ownership**, block all public access under **Block Public Access settings for this bucket**, enable data object versioning under **Bucket Versioning** and enable server-side encryption using Amazon S3-managed keys under **Default encryption**.   
 3. Click **Create bucket**. Navigate to the **Properties** tab to locate the S3 bucket Amazon Resource Name (ARN) i.e. `arn:aws:s3:::<name>-landing-zone`.  
 4. Navigate to **Access Points** and create a new access point named `<name>-landing-zone-access`. Select internet under **Network Origin**, block all public access under **Block Public Access settings for this Access Point** and record the Access Point ARN.    
-5. Create a S3 bucket policy for ``<name>-landing-zone-access`` that allows analyst users to also access `arn:aws:s3:::<name>-landing-zone` though its access point.   
+5. Create a S3 bucket policy for `<name>-landing-zone-access` that allows analyst users to also access `arn:aws:s3:::<name>-landing-zone` though its access point.   
 
     <details><summary>JSON code</summary><p>  
 
@@ -129,9 +129,9 @@ To create the S3 buckets, log into AWS as an IAM admin user:
         [
             {
                 "Effect": "Allow",
-                "Principal" : {"AWS": "arn-user-analyst-<name>"},
+                "Principal" : {"AWS": "arn:aws:iam::<aws-account-id>:user/analyst-<name>"},
                 "Action" : "s3:*",
-                "Resource" : "<access-point-arn>-erika-landing-zone",
+                "Resource" : "arn:aws:s3:ap-southeast-2:<aws-account-id>:accesspoint/<name>-landing-zone-access",  
                 "Condition": {"StringEquals": {"s3:DataAccessPointAccount": "<aws-account-id>"}}
             }
         ]
@@ -139,9 +139,9 @@ To create the S3 buckets, log into AWS as an IAM admin user:
     ```
     </p></details>
 
-6. Repeat this process and assign an unique name to a second S3 bucket i.e. `<name>-analysis` and second access point i.e. `<name>-analysis-access`. The bucket will then have the Amazon Resource Name `arn:aws:s3:::<name>-analysis` and a separate Access Point ARN and access point bucket policy.    
+6. Repeat this process and assign an unique name to a second S3 bucket i.e. `<name>-analysis` and second access point i.e. `<name>-analysis-access`. The bucket will then have the Amazon Resource Name `arn:aws:s3:::<name>-analysis` and a separate Access Point ARN and access point bucket policy doe analyst users.      
 
-When ACLs are disabled, the bucket owner i.e. `admin_<name>` automatically owns and has full control over every object in the bucket. The IAM admin user can then create separate bucket policies for different user groups.  
+When ACLs are disabled, the bucket owner i.e. `admin-<name>` automatically owns and has full control over every object in the bucket. The IAM admin user can then create separate bucket policies for different user groups.  
 
 >**Note**  
 > It is essential to block all public access settings to S3 buckets. This needs to be managed when you create a S3 bucket resource and when you create its IAM or bucket access policies. Avoid using `"Principal": "*"` at all costs in JSON policies with an `allow` effect, as this will enable public access to your AWS resources.    
@@ -180,53 +180,8 @@ We ideally want to separate data engineering and data analysis work components u
             {
                 "Sid": "AccessAllS3Settings",
                 "Effect": "Allow",
-                "Action": [
-                    "s3:ListAllMyBuckets",
-                    "s3:ListBucket",
-                    "s3:ListBucketVersions",
-                    "s3:GetBucketVersioning",
-                    "s3:GetBucketPolicyStatus",
-                    "s3:GetBucketPublicAccessBlock",
-                    "s3:GetAccountPublicAccessBlock",
-                    "s3:GetBucketAcl",
-                    "s3:GetObjectAcl",
-                    "s3:ListAccessPointsForObjectLambda",
-                    "s3:ListBucketMultipartUploads",
-                    "s3:ListAccessPoints",
-                    "s3:GetAccessPoint",
-                    "s3:CreateAccessPoint",
-                    "s3:ListJobs",
-                    "s3:CreateJob",
-                    "s3:ListStorageLensConfigurations",
-                    "s3:PutStorageLensConfiguration",
-                    "s3:ListMultipartUploadParts",
-                    "s3:ListMultiRegionAccessPoints",
-                    "s3:GetBucketPolicy",
-                    "s3:GetBucketLogging",
-                    "s3:GetBucketNotification",
-                    "s3:GetEncryptionConfiguration"
-                    ],
-                "Resource": "*", 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-
-            {
-                "Sid": "UseAllS3Buckets",
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:GetObjectVersion", 
-                    "s3:GetObjectVersionAttributes",
-                    "s3:GetObjectAttributes",
-                    "s3:PutObject",
-                    "s3:DeleteObject"
-                    ],
-                "Resource": [
-                    "arn:aws:s3:::erika-landing-zone",
-                    "arn:aws:s3:::erika-landing-zone/*",
-                    "arn:aws:s3:::erika-analysis",
-                    "arn:aws:s3:::erika-analysis/*"
-                    ], 
+                "Action": "s3:*",
+                "Resource": "arn:aws:s3:::*", 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
 
@@ -234,12 +189,7 @@ We ideally want to separate data engineering and data analysis work components u
                 "Sid": "DenyUnencryptedS3ObjectUploads",
                 "Effect": "Deny",
                 "Action": "s3:PutObject",
-                "Resource": [
-                    "arn:aws:s3:::erika-landing-zone",
-                    "arn:aws:s3:::erika-landing-zone/*",
-                    "arn:aws:s3:::erika-analysis/*",
-                    "arn:aws:s3:::erika-analysis"
-                    ],
+                "Resource": "arn:aws:s3:::*",
                 "Condition": {"Null": {"s3:x-amz-server-side-encryption": true}}
             },
         
@@ -288,6 +238,7 @@ We ideally want to separate data engineering and data analysis work components u
                     "iam:DeleteAccessKey",
                     "iam:ListAccessKeys",
                     "iam:UpdateAccessKey",
+                    "iam:GetAccessKeyLastUsed"
                     "iam:ChangePassword",
                     "iam:GetUser"
                     ],
@@ -300,12 +251,12 @@ We ideally want to separate data engineering and data analysis work components u
     </p></details>
 
     > **Note**   
-    > AWS resource access for the `engineer` user group includes unrestricted access to Glue and all S3 buckets. Both resource and object ARNS need to be specified for `s3:GetObject` and `s3:PutObject` actions. The action `iam:PassRole` is required for `s3:CreateJob`. [User security management](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html) should also be enabled.    
+    > AWS resource access for the `engineer` user group includes unrestricted access to Glue and all S3 buckets. The action `iam:PassRole` is required for `s3:CreateJob`. [User security management](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html) should also be enabled.    
 
-2. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access arn>` in CloudShell.      
-3. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer_<name>` and confirm that you can access CloudShell, upload and delete data objects and create S3 bucket access points.  
-4. Upload a test dataset in `arn:aws:s3:::erika-landing-zone/raw` for testing of `analyst_access` JSON policies. Confirm that you can copy the test dataset with encryption into `arn:aws:s3:::erika-analysis` using `aws s3 cp s3://erika-landing-zone/raw/test.csv s3://erika-analysis/test.csv --sse AES256` in CloudShell.  
-5. Confirm that unencrypted data uploads are denied i.e. `aws s3 cp s3://erika-landing-zone/raw/test.csv s3://erika-analysis/test.csv` fails in CloudShell.   
+2. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer-access-arn>` in CloudShell.      
+3. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer-<name>` and confirm that you can access CloudShell, upload and delete data objects and create S3 bucket access points.  
+4. Upload a test dataset in `arn:aws:s3:::<name>-landing-zone/raw`. Confirm that you can copy the test dataset with encryption into `arn:aws:s3:::<name>-analysis` using `aws s3 cp s3://<name>-landing-zone/raw/test.csv s3://<name>-analysis/test.csv --sse AES256` in CloudShell.  
+5. Confirm that unencrypted data uploads are denied i.e. `aws s3 cp s3://<name>-landing-zone/raw/test.csv s3://<name>-analysis/test.csv` fails in CloudShell.   
 
 ## Create an `analyst_access` IAM policy  
 1. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.   
@@ -355,13 +306,14 @@ We ideally want to separate data engineering and data analysis work components u
                     "s3:PutStorageLensConfiguration",
                     "s3:ListMultipartUploadParts",
                     "s3:ListMultiRegionAccessPoints",
+                    "s3:GetBucketLocation", 
                     "s3:GetBucketPolicy",
                     "s3:GetBucketLogging",
                     "s3:GetBucketNotification",
                     "s3:GetBucketLocation",
                     "s3:GetEncryptionConfiguration"
                     ],
-                "Resource": "*", 
+                "Resource": "arn:aws:s3:::*", 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
 
@@ -375,10 +327,8 @@ We ideally want to separate data engineering and data analysis work components u
                     "s3:GetObjectAttributes"
                     ],
                 "Resource": [
-                    "arn:aws:s3:::erika-landing-zone",
-                    "arn:aws:s3:::erika-landing-zone/*",
-                    "arn:aws:s3:::erika-analysis",
-                    "arn:aws:s3:::erika-analysis/*"
+                    "arn:aws:s3:::<name>-landing-zone/*",
+                    "arn:aws:s3:::<name>-analysis/*"
                     ], 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
@@ -390,7 +340,7 @@ We ideally want to separate data engineering and data analysis work components u
                     "s3:PutObject",
                     "s3:DeleteObject"
                     ],
-                "Resource": "arn:aws:s3:::erika-analysis/*/", 
+                "Resource": "arn:aws:s3:::<name>-analysis/*/", 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
 
@@ -399,8 +349,8 @@ We ideally want to separate data engineering and data analysis work components u
                 "Effect": "Allow",
                 "Action": "s3:DeleteObject",
                 "Resource": [
-                    "arn:aws:s3:::erika-analysis",
-                    "arn:aws:s3:::erika-analysis/*"
+                    "arn:aws:s3:::<name>-analysis",
+                    "arn:aws:s3:::<name>-analysis/*"
                     ], 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
@@ -410,14 +360,14 @@ We ideally want to separate data engineering and data analysis work components u
                 "Effect": "Allow",
                 "Action": "s3:PutObject",
                 "Resource": [
-                    "arn:aws:s3:::erika-analysis",
-                    "arn:aws:s3:::erika-analysis/*"
+                    "arn:aws:s3:::<name>-analysis",
+                    "arn:aws:s3:::<name>-analysis/*"
                     ], 
                 "Condition": {
                     "StringEquals": {"aws:RequestedRegion": "ap-southeast-2"},
                     "ForAnyValue:StringEquals": {"s3:DataAccessPointArn": [
-                        "<access-point-arn>-erika-landing-zone>",
-                        "<access-point-arn>-erika-analysis>"
+                        "<access-point-arn>-<name>-landing-zone>",
+                        "<access-point-arn>-<name>-analysis>"
                         ]}  
                     }
             },
@@ -427,10 +377,10 @@ We ideally want to separate data engineering and data analysis work components u
                 "Effect": "Deny",
                 "Action": "s3:PutObject",
                 "Resource": [
-                    "arn:aws:s3:::erika-landing-zone",
-                    "arn:aws:s3:::erika-landing-zone/*"
-                    "arn:aws:s3:::erika-analysis",
-                    "arn:aws:s3:::erika-analysis/*",
+                    "arn:aws:s3:::<name>-landing-zone",
+                    "arn:aws:s3:::<name>-landing-zone/*"
+                    "arn:aws:s3:::<name>-analysis",
+                    "arn:aws:s3:::<name>-analysis/*",
                     ],
                 "Condition": {"Null": {"s3:x-amz-server-side-encryption": true}}
             },
@@ -480,6 +430,7 @@ We ideally want to separate data engineering and data analysis work components u
                     "iam:DeleteAccessKey",
                     "iam:ListAccessKeys",
                     "iam:UpdateAccessKey",
+                    "iam:GetAccessKeyLastUsed",
                     "iam:ChangePassword",
                     "iam:GetUser"
                     ],
@@ -492,30 +443,51 @@ We ideally want to separate data engineering and data analysis work components u
     </p></details>  
 
     >**Note**  
-    > AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::erika-analysis` conditional on the source access points being `<access-point-arn-for-erika-landing-zone>` or `<access-point-arn-for-erika-landing-zone>`.  
+    > AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::<name>-analysis` conditional on the source access points being `<access-point-arn-for-landing-zone>` or `<access-point-arn-for-analysis>`.  
 
 2. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.        
-3. Confirm that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst_<name>` and confirm that you can open but not create new encrypted data objects or folders in `arn:aws:s3:::erika-landing-zone`. Confirm that you can create and delete encrypted folders in `arn:aws:s3:::erika-analysis`.  
+3. Confirm that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst-<name>` and confirm that you can open but not create new encrypted data objects or folders in `arn:aws:s3:::<name>-landing-zone`. Confirm that you can create and delete encrypted folders in `arn:aws:s3:::<name>-analysis`.  
 4. Confirm that # TODO  
 
 ## CLI tests for engineer and analyst user groups   
 To test our IAM policies, we can also run the following tests in CloudShell from the `<name>_engineer` and `<name>_analyst` IAM user accounts.  
 
-| CLI test      | engineer | analyst |  
-| ------------- | -------- | ------- |  
-| `echo "hello world" \| aws s3 cp - s3://erika-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |   
-| `aws s3 ls s3://erika-landing-zone/test/`  | :heavy_check_mark:  | :heavy_check_mark: |     
-| `echo "hello world" \| aws s3 cp - s3://erika-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |     
-| `aws s3 ls s3://erika-analysis/test/` | :heavy_check_mark:  | :heavy_check_mark: |     
-| `aws s3 rm s3://erika-analysis/test --recursive` | :heavy_check_mark:  |  |       
-| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt --sse AES256` | :heavy_check_mark: |    
-| `aws s3 cp s3://erika-landing-zone/test/hw.txt s3://erika-analysis/copy/hw.txt` | :x: | Currently failing |    
-
-The use of `--recursive` deletes the S3 bucket folder as well as its data object contents.    
+| CLI test | engineer | analyst |  
+| ------------------------------------------------------------------------------------ | ------------------ | --- |   
+| `echo "hi" \| aws s3 cp - s3://<name>-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |   
+| `aws s3 ls s3://<name>-landing-zone/test/`  | :heavy_check_mark:  | :heavy_check_mark: |     
+| `echo "hi" \| aws s3 cp - s3://<name>-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |     
+| `aws s3 ls s3://<name>-analysis/test/` | :heavy_check_mark:  | :heavy_check_mark: |     
+| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | Currently failing |     
+| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-landing-zone/test/hw_copy.txt --sse AES256` | :heavy_check_mark: |  |    
+| `aws s3 rm s3://<name>-landing-zone/test/hw_copy.txt` | :heavy_check_mark:  |  |   
+| `aws s3 rm s3://<name>-analysis/test/hw_copy.txt` | :heavy_check_mark:  | :heavy_check_mark: |   
+| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw.txt` | :x: | :x: |    
 
 >**Note**  
 > You can also test the generation of JSON policies using the [AWS policy generator wizard](https://awspolicygen.s3.amazonaws.com/policygen.html) and read more details about creating IAM policies with different S3 permissions [here](https://aws.amazon.com/blogs/security/writing-iam-policies-grant-access-to-user-specific-folders-in-an-amazon-s3-bucket/).   
 </br>
+
+
+# Manage AWS credentials as an analyst user   
+Once the user has been created, see Managing access keys to learn how to create and retrieve the keys used to authenticate the user.
+
+If you have the AWS CLI installed, then you can use the aws configure command to configure your credentials file:
+
+aws configure
+Alternatively, you can create the credentials file yourself. By default, its location is ~/.aws/credentials. At a minimum, the credentials file should specify the access key and secret access key. In this example, the key and secret key for the account are specified the default profile:
+
+[default]
+aws_access_key_id = YOUR_ACCESS_KEY
+aws_secret_access_key = YOUR_SECRET_KEY
+You may also want to add a default region to the AWS configuration file, which is located by default at ~/.aws/config:
+
+[default]
+region=us-east-1
+Alternatively, you can pass a region_name when creating clients and resources.
+
+You have now configured credentials for the default profile as well as a default region to use when creating connections. See Configuration for in-depth configuration sources and options.
+#TODO you can set this up to test `boto3`.  
 
 
 # Launch an EC2 instance    
@@ -526,7 +498,8 @@ The use of `--recursive` deletes the S3 bucket folder as well as its data object
     + Accelerated computing instances (GPUs?)
     + Storage optimized instances  (data storage applications)
 
-+ Elastic load balancing is based on a region and is used for EC2 scaling. Decoupled architecture from the front end and the back end. 
++ Recommendation to run an EC2 instance across at least two avaiability zones within a region (availability zone is a proper subset of a region).  
++ Elastic load balancing is based on a region and is used for EC2 scaling. Decoupled architecture from the front end and the back end.   
 
 Elastic Load Balancing (distributes incoming internet traffic) and Amazon EC2 Auto Scaling are separate services, they work together to help ensure that applications running in Amazon EC2 can provide high performance and availability  
 
