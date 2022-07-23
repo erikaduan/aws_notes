@@ -348,21 +348,18 @@ We ideally want to separate data engineering and data analysis work components u
                 "Sid": "DeleteObjectsInAnalysisS3Bucket",
                 "Effect": "Allow",
                 "Action": "s3:DeleteObject",
-                "Resource": [
-                    "arn:aws:s3:::<name>-analysis",
-                    "arn:aws:s3:::<name>-analysis/*"
-                    ], 
+                "Resource": "arn:aws:s3:::<name>-analysis/*", 
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
             },
 
             {
                 "Sid": "PutAnalysisS3BucketLimitedBySource",
                 "Effect": "Allow",
-                "Action": "s3:PutObject",
-                "Resource": [
-                    "arn:aws:s3:::<name>-analysis",
-                    "arn:aws:s3:::<name>-analysis/*"
-                    ], 
+                "Action": [
+                    "s3:PutObject",
+                    "s3:CopyObject"
+                    ],
+                "Resource": "arn:aws:s3:::<name>-analysis/*", 
                 "Condition": {
                     "StringEquals": {"aws:RequestedRegion": "ap-southeast-2"},
                     "ForAnyValue:StringEquals": {"s3:DataAccessPointArn": [
@@ -376,12 +373,7 @@ We ideally want to separate data engineering and data analysis work components u
                 "Sid": "DenyUnencryptedS3ObjectUploads",
                 "Effect": "Deny",
                 "Action": "s3:PutObject",
-                "Resource": [
-                    "arn:aws:s3:::<name>-landing-zone",
-                    "arn:aws:s3:::<name>-landing-zone/*"
-                    "arn:aws:s3:::<name>-analysis",
-                    "arn:aws:s3:::<name>-analysis/*",
-                    ],
+                "Resource": "arn:aws:s3:::*",
                 "Condition": {"Null": {"s3:x-amz-server-side-encryption": true}}
             },
 
@@ -443,14 +435,14 @@ We ideally want to separate data engineering and data analysis work components u
     </p></details>  
 
     >**Note**  
-    > AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::<name>-analysis` conditional on the source access points being `<access-point-arn-for-landing-zone>` or `<access-point-arn-for-analysis>`.  
+    > AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::<name>-analysis` conditional on the source access points being `<name>-landing-zone-access` or `<name>-analysis-access`.   
 
 2. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.        
 3. Confirm that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst-<name>` and confirm that you can open but not create new encrypted data objects or folders in `arn:aws:s3:::<name>-landing-zone`. Confirm that you can create and delete encrypted folders in `arn:aws:s3:::<name>-analysis`.  
 4. Confirm that # TODO  
 
 ## CLI tests for engineer and analyst user groups   
-To test our IAM policies, we can also run the following tests in CloudShell from the `<name>_engineer` and `<name>_analyst` IAM user accounts.  
+To test our IAM policies, we can also run the following tests in CloudShell from the `engineer-<name>` and `analyst-<name>` IAM user accounts.  
 
 | CLI test | engineer | analyst |  
 | ------------------------------------------------------------------------------------ | ------------------ | --- |   
@@ -458,9 +450,10 @@ To test our IAM policies, we can also run the following tests in CloudShell from
 | `aws s3 ls s3://<name>-landing-zone/test/`  | :heavy_check_mark:  | :heavy_check_mark: |     
 | `echo "hi" \| aws s3 cp - s3://<name>-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |     
 | `aws s3 ls s3://<name>-analysis/test/` | :heavy_check_mark:  | :heavy_check_mark: |     
-| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | Currently failing |     
-| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-landing-zone/test/hw_copy.txt --sse AES256` | :heavy_check_mark: |  |    
-| `aws s3 rm s3://<name>-landing-zone/test/hw_copy.txt` | :heavy_check_mark:  |  |   
+| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | Failed |     
+| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-landing-zone/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | :x: |   
+| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-analysis/test_copy/hw_copy.txt --sse AES256` |  | Failed |     
+| `aws s3 rm s3://<name>-landing-zone/test/hw_copy.txt` | :heavy_check_mark:  | :x: |   
 | `aws s3 rm s3://<name>-analysis/test/hw_copy.txt` | :heavy_check_mark:  | :heavy_check_mark: |   
 | `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw.txt` | :x: | :x: |    
 
