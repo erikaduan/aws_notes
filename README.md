@@ -119,6 +119,7 @@ Log in via your `admin-<name>` IAM account to create more user groups. You can u
 | Cloud compute | Create EC2 instances | :heavy_check_mark: | :heavy_check_mark: |    
 | Cloud compute | Access AWS Lambda | :heavy_check_mark: | :heavy_check_mark: |    
 | Containerisation | Access AWS ECS | :heavy_check_mark: | :heavy_check_mark: |    
+</br>   
 
 To create an `engineer` user group:  
 1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.   
@@ -222,24 +223,158 @@ To create an `engineer` user group:
         ]
     }
     ```  
-    </p></details>
-
-    > **Note**   
-    > The action `iam:PassRole` is required for `s3:CreateJob`. [User security management](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html) should also be enabled.    
+    </p></details>   
 
 3. Assign the `engineer_access` policy to the `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer-access-arn>` in CloudShell.     
 4. Create a new IAM user named `engineer-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `engineer` user group.     
-5. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer-<name>` and confirm that you can access CloudShell and create S3 buckets and S3 bucket access points.     
 
-# TODO
+> **Note**   
+> The action `iam:PassRole` is required for `s3:CreateJob` in the engineer access policy and [user security management](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html) is also enabled.     
+</br>   
 
 To create an `analyst` user group:  
-1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell. 
-2. Create a new IAM user named `analyst-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.  
-</br> 
+1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell.  
+2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.   
 
+    <details><summary>JSON code</summary><p>  
+    
+    ```json   
+    {
+    "Version": "2012-10-17",
+    "Statement": 
+        [
+            {
+                "Sid": "UseDataScienceResources",
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:*",
+                    "ecs:*",
+                    "lambda:*",
+                    "sagemaker:*",
+                    "cloudshell:*"
+                    ],
+                "Resource": "*",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
 
+            {
+                "Sid": "UseCodeCommit",
+                "Effect": "Allow",
+                "Action": "codecommit:*",
+                "Resource": "arn:aws:codecommit:ap-southeast-2:<aws-account-id>:*",   
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
+            
+            {
+                "Sid": "AccessSpecificS3Settings",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListAllMyBuckets",
+                    "s3:ListBucket",
+                    "s3:ListBucketVersions",
+                    "s3:GetBucketVersioning",
+                    "s3:GetBucketPolicyStatus",
+                    "s3:GetBucketPublicAccessBlock",
+                    "s3:GetAccountPublicAccessBlock",
+                    "s3:GetBucketAcl",
+                    "s3:GetObjectAcl",
+                    "s3:ListAccessPointsForObjectLambda",
+                    "s3:ListBucketMultipartUploads",
+                    "s3:ListAccessPoints",
+                    "s3:GetAccessPoint",
+                    "s3:CreateAccessPoint",
+                    "s3:ListJobs",
+                    "s3:CreateJob",
+                    "s3:ListStorageLensConfigurations",
+                    "s3:PutStorageLensConfiguration",
+                    "s3:ListMultipartUploadParts",
+                    "s3:ListMultiRegionAccessPoints",
+                    "s3:GetBucketLocation", 
+                    "s3:GetBucketPolicy",
+                    "s3:GetBucketLogging",
+                    "s3:GetBucketNotification",
+                    "s3:GetBucketLocation",
+                    "s3:GetEncryptionConfiguration"
+                    ],
+                "Resource": "arn:aws:s3:::*", 
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+            },
 
+            {
+                "Sid": "DenyUnencryptedS3ObjectUploads",
+                "Effect": "Deny",
+                "Action": "s3:PutObject",
+                "Resource": "arn:aws:s3:::*",
+                "Condition": {"Null": {"s3:x-amz-server-side-encryption": true}}
+            },
+
+            {
+                "Sid": "UseConsole",
+                "Effect": "Allow",
+                "Action": [
+                    "cloudshell:*",
+                    "iam:PassRole",
+                    "aws-portal:ViewUsage",
+                    "aws-portal:ViewBilling",
+                    "aws-portal:ViewAccount",
+                    "iam:GetAccountPasswordPolicy",
+                    "iam:ListMFADevices",
+                    "iam:ListPolicies"
+                    ],
+                "Resource": "*",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+            },
+            
+            {
+                "Sid": "ManageOwnVirtualMFADevice",
+                "Effect": "Allow",
+                "Action": [
+                    "iam:CreateVirtualMFADevice",
+                    "iam:DeleteVirtualMFADevice",
+                    "iam:DeactivateMFADevice",
+                    "iam:EnableMFADevice",
+                    "iam:ListMFADevices",
+                    "iam:ResyncMFADevice"
+                    ],
+                "Resource": "arn:aws:iam::*:mfa/${aws:username}",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+            },
+
+            {
+                "Sid": "ManageOwnSecurityCredentials",
+                "Effect": "Allow",
+                "Action": [
+                    "iam:CreateServiceSpecificCredential",
+                    "iam:DeleteServiceSpecificCredential",
+                    "iam:ListServiceSpecificCredentials",
+                    "iam:ResetServiceSpecificCredential",
+                    "iam:UpdateServiceSpecificCredential",
+                    "iam:CreateAccessKey",
+                    "iam:DeleteAccessKey",
+                    "iam:ListAccessKeys",
+                    "iam:UpdateAccessKey",
+                    "iam:GetAccessKeyLastUsed",
+                    "iam:ChangePassword",
+                    "iam:GetUser"
+                    ],
+                "Resource": "arn:aws:iam::*:user/${aws:username}",
+                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+            }
+        ]
+    }
+    ```  
+    </p></details>  
+
+3. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.        
+4. Create a new IAM user named `analyst-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.  
+
+>**Note**  
+> AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. Bucket access is managed using S3 bucket policies rather than IAM policies.    
+</br>      
+
+#TODO  
+
+https://aws.amazon.com/blogs/security/iam-policies-and-bucket-policies-and-acls-oh-my-controlling-access-to-s3-resources/
 
 # Create S3 buckets and S3 bucket access points      
 We will first create two S3 bucket resources, one for data ingress and egress from AWS and one for data access inside AWS.  
@@ -286,289 +421,13 @@ When ACLs are disabled, the bucket owner i.e. `admin-<name>` automatically owns 
 We ideally want to separate data engineering and data analysis work components using IAM user group policies. When accessing AWS from a private external environment, we might want to restrict data migration tasks to a limited group of individuals i.e. the `engineer` user group. We might also want to restrict data uploads by the `analyst` user group to existing S3 data objects.     
 ![](/figures/aws_s3_access.svg)  
 
-## Create an `engineer_access` IAM policy    
-1. Create an engineer access policy named `engineer_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.  
 
-    <details><summary>JSON code</summary><p>  
-
-    ```json  
-    {
-    "Version": "2012-10-17",
-    "Statement": 
-        [
-            {
-                "Sid": "UseEngineeringResources",
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:*",
-                    "glue:*",
-                    "cloudshell:*"
-                    ],
-                "Resource": "*",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-        
-            {
-                "Sid": "AccessAllS3Settings",
-                "Effect": "Allow",
-                "Action": "s3:*",
-                "Resource": "arn:aws:s3:::*", 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-
-            {
-                "Sid": "DenyUnencryptedS3ObjectUploads",
-                "Effect": "Deny",
-                "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::*",
-                "Condition": {"Null": {"s3:x-amz-server-side-encryption": true}}
-            },
-        
-            {
-                "Sid": "UseConsole",
-                "Effect": "Allow",
-                "Action": [
-                    "cloudshell:*",
-                    "iam:PassRole",
-                    "aws-portal:ViewUsage",
-                    "aws-portal:ViewBilling",
-                    "aws-portal:ViewAccount",
-                    "iam:GetAccountPasswordPolicy",
-                    "iam:ListMFADevices",
-                    "iam:ListPolicies"
-                    ],
-                "Resource": "*",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
-            },
-            
-            {
-                "Sid": "ManageOwnVirtualMFADevice",
-                "Effect": "Allow",
-                "Action": [
-                    "iam:CreateVirtualMFADevice",
-                    "iam:DeleteVirtualMFADevice"
-                    ],
-                "Resource": "arn:aws:iam::*:mfa/${aws:username}",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
-            },
-
-            {
-                "Sid": "ManageOwnSecurityCredentials",
-                "Effect": "Allow",
-                "Action": [
-                    "iam:DeactivateMFADevice",
-                    "iam:EnableMFADevice",
-                    "iam:ListMFADevices",
-                    "iam:ResyncMFADevice",
-                    "iam:CreateServiceSpecificCredential",
-                    "iam:DeleteServiceSpecificCredential",
-                    "iam:ListServiceSpecificCredentials",
-                    "iam:ResetServiceSpecificCredential",
-                    "iam:UpdateServiceSpecificCredential",
-                    "iam:CreateAccessKey",
-                    "iam:DeleteAccessKey",
-                    "iam:ListAccessKeys",
-                    "iam:UpdateAccessKey",
-                    "iam:GetAccessKeyLastUsed"
-                    "iam:ChangePassword",
-                    "iam:GetUser"
-                    ],
-                "Resource": "arn:aws:iam::*:user/${aws:username}",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
-            }
-        ]
-    }
-    ```  
-    </p></details>
-
-    > **Note**   
-    > AWS resource access for the `engineer` user group includes unrestricted access to Glue and all S3 buckets. The action `iam:PassRole` is required for `s3:CreateJob`. [User security management](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_my-sec-creds-self-manage.html) should also be enabled.    
-
-2. Assign the `engineer_access` policy to your previously created `engineer` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer-access-arn>` in CloudShell.      
 3. Test that the `engineer_access` policy has been correctly applied. Log into your AWS account as `engineer-<name>` and confirm that you can access CloudShell, upload and delete data objects and create S3 bucket access points.  
 4. Upload a test dataset in `arn:aws:s3:::<name>-landing-zone/raw`. Confirm that you can copy the test dataset with encryption into `arn:aws:s3:::<name>-analysis` using `aws s3 cp s3://<name>-landing-zone/raw/test.csv s3://<name>-analysis/test.csv --sse AES256` in CloudShell.  
 5. Confirm that unencrypted data uploads are denied i.e. `aws s3 cp s3://<name>-landing-zone/raw/test.csv s3://<name>-analysis/test.csv` fails in CloudShell.   
 
 ## Create an `analyst_access` IAM policy  
-1. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.   
 
-    <details><summary>JSON code</summary><p>  
-    
-    ```json   
-    {
-    "Version": "2012-10-17",
-    "Statement": 
-        [
-            {
-                "Sid": "UseDataScienceResources",
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:*",
-                    "ecs:*",
-                    "lambda:*",
-                    "sagemaker:*",
-                    "cloudshell:*"
-                    ],
-                "Resource": "*",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-            
-            {
-                "Sid": "AccessAllS3Settings",
-                "Effect": "Allow",
-                "Action": [
-                    "s3:ListAllMyBuckets",
-                    "s3:ListBucket",
-                    "s3:ListBucketVersions",
-                    "s3:GetBucketVersioning",
-                    "s3:GetBucketPolicyStatus",
-                    "s3:GetBucketPublicAccessBlock",
-                    "s3:GetAccountPublicAccessBlock",
-                    "s3:GetBucketAcl",
-                    "s3:GetObjectAcl",
-                    "s3:ListAccessPointsForObjectLambda",
-                    "s3:ListBucketMultipartUploads",
-                    "s3:ListAccessPoints",
-                    "s3:GetAccessPoint",
-                    "s3:CreateAccessPoint",
-                    "s3:ListJobs",
-                    "s3:CreateJob",
-                    "s3:ListStorageLensConfigurations",
-                    "s3:PutStorageLensConfiguration",
-                    "s3:ListMultipartUploadParts",
-                    "s3:ListMultiRegionAccessPoints",
-                    "s3:GetBucketLocation", 
-                    "s3:GetBucketPolicy",
-                    "s3:GetBucketLogging",
-                    "s3:GetBucketNotification",
-                    "s3:GetBucketLocation",
-                    "s3:GetEncryptionConfiguration"
-                    ],
-                "Resource": "arn:aws:s3:::*", 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-
-            {
-                "Sid": "GetAllS3Buckets",
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:GetObjectVersion", 
-                    "s3:GetObjectVersionAttributes",
-                    "s3:GetObjectAttributes"
-                    ],
-                "Resource": [
-                    "arn:aws:s3:::<name>-landing-zone/*",
-                    "arn:aws:s3:::<name>-analysis/*"
-                    ], 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-
-            {
-                "Sid": "CreateFoldersInAnalysisS3Bucket",
-                "Effect": "Allow",
-                "Action": [
-                    "s3:PutObject",
-                    "s3:DeleteObject"
-                    ],
-                "Resource": "arn:aws:s3:::<name>-analysis/*/", 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-
-            {
-                "Sid": "DeleteObjectsInAnalysisS3Bucket",
-                "Effect": "Allow",
-                "Action": "s3:DeleteObject",
-                "Resource": "arn:aws:s3:::<name>-analysis/*", 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
-            },
-
-            {
-                "Sid": "PutAnalysisS3BucketLimitedBySource",
-                "Effect": "Allow",
-                "Action": [
-                    "s3:PutObject",
-                    "s3:CopyObject"
-                    ],
-                "Resource": "arn:aws:s3:::<name>-analysis/*", 
-                "Condition": {
-                    "StringEquals": {"aws:RequestedRegion": "ap-southeast-2"},
-                    "ForAnyValue:StringEquals": {"s3:DataAccessPointArn": [
-                        "<access-point-arn>-<name>-landing-zone>",
-                        "<access-point-arn>-<name>-analysis>"
-                        ]}  
-                    }
-            },
-
-            {
-                "Sid": "DenyUnencryptedS3ObjectUploads",
-                "Effect": "Deny",
-                "Action": "s3:PutObject",
-                "Resource": "arn:aws:s3:::*",
-                "Condition": {"Null": {"s3:x-amz-server-side-encryption": true}}
-            },
-
-            {
-                "Sid": "UseConsole",
-                "Effect": "Allow",
-                "Action": [
-                    "cloudshell:*",
-                    "iam:PassRole",
-                    "aws-portal:ViewUsage",
-                    "aws-portal:ViewBilling",
-                    "aws-portal:ViewAccount",
-                    "iam:GetAccountPasswordPolicy",
-                    "iam:ListMFADevices",
-                    "iam:ListPolicies"
-                    ],
-                "Resource": "*",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
-            },
-            
-            {
-                "Sid": "ManageOwnVirtualMFADevice",
-                "Effect": "Allow",
-                "Action": [
-                    "iam:CreateVirtualMFADevice",
-                    "iam:DeleteVirtualMFADevice"
-                    ],
-                "Resource": "arn:aws:iam::*:mfa/${aws:username}",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
-            },
-
-            {
-                "Sid": "ManageOwnSecurityCredentials",
-                "Effect": "Allow",
-                "Action": [
-                    "iam:DeactivateMFADevice",
-                    "iam:EnableMFADevice",
-                    "iam:ListMFADevices",
-                    "iam:ResyncMFADevice",
-                    "iam:CreateServiceSpecificCredential",
-                    "iam:DeleteServiceSpecificCredential",
-                    "iam:ListServiceSpecificCredentials",
-                    "iam:ResetServiceSpecificCredential",
-                    "iam:UpdateServiceSpecificCredential",
-                    "iam:CreateAccessKey",
-                    "iam:DeleteAccessKey",
-                    "iam:ListAccessKeys",
-                    "iam:UpdateAccessKey",
-                    "iam:GetAccessKeyLastUsed",
-                    "iam:ChangePassword",
-                    "iam:GetUser"
-                    ],
-                "Resource": "arn:aws:iam::*:user/${aws:username}",
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
-            }
-        ]
-    }
-    ```  
-    </p></details>  
-
-    >**Note**  
-    > AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. `GET` access to all S3 buckets is permitted but `PUT` access is limited to `arn:aws:s3:::<name>-analysis` conditional on the source access points being `<name>-landing-zone-access` or `<name>-analysis-access`.   
-
-2. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.        
 3. Confirm that the `analyst_access` policy has been correctly applied. Log into your AWS account as `analyst-<name>` and confirm that you can open but not create new encrypted data objects or folders in `arn:aws:s3:::<name>-landing-zone`. Confirm that you can create and delete encrypted folders in `arn:aws:s3:::<name>-analysis`.  
 4. Confirm that # TODO  
 
