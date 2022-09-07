@@ -111,9 +111,9 @@ Log in via your `admin-<name>` IAM account to create more user groups. You can u
 | Platform Ops | Access AWS CodeCommit | :heavy_check_mark: | :heavy_check_mark: |     
 | Engineering | Access AWS Glue | :heavy_check_mark: | :x: |    
 | Engineering | Create S3 buckets | :heavy_check_mark: | :x: |    
+| Engineering | Set S3 bucket permissions | :heavy_check_mark: | :x: |    
 | Engineering | Read objects inside `source` S3 bucket | :heavy_check_mark: | :heavy_check_mark: |    
 | Engineering | Write objects inside `source` S3 bucket | :heavy_check_mark: | :x: |    
-| Engineering | Set S3 bucket permissions | :heavy_check_mark: | :x: |     
 | Analysis | Read objects inside `projects` S3 bucket | :heavy_check_mark: | :heavy_check_mark: |    
 | Analysis | Write objects inside `source` S3 bucket | :heavy_check_mark: | :heavy_check_mark: |     
 | Analysis | Access AWS Sagemaker | :heavy_check_mark: | :heavy_check_mark: |     
@@ -376,9 +376,21 @@ In our case, we would like to create two S3 bucket resources, one named `source`
 + The `source` bucket will contain a `landing_zone` folder and `bronze_layer` folder, with data analysts granted read access to the `bronze_layer` folder.   
 + The `projects` bucket will contain multiple folders, each hosting a separate project. Analysts have read and write access to their own project folders.   
 
+![](./figures/aws_s3_access.svg)  
+
 To create the source S3 bucket:    
 1. Log into AWS using a data engineer user account and navigate to the S3 console and click **Create bucket**.    
 2. This takes you to a new page where you need to assign a unique bucket name i.e. `<name>-source`, confirm your AWS region as `ap-southeast-2`, keep ACLs disabled under **Object Ownership**, block all public access under **Block Public Access settings for this bucket**, enable data object versioning under **Bucket Versioning** and enable server-side encryption using Amazon S3-managed keys under **Default encryption**.    
-3. Confirm bucket creation and click **Create bucket** again. Navigate to the **Properties** tab to locate the S3 bucket Amazon Resource Name (ARN) i.e. `arn:aws:s3:::<name>-source`.   
+3. Confirm bucket creation by clicking **Create bucket** again.  
+4. Click on the newly created bucket and navigate to the **Properties** tab to locate its Amazon Resource Name (ARN) i.e. `arn:aws:s3:::<name>-source`. 
+5. Navigate back to the **Object** tab and click **Create folder** to create the `landing_zone` and `bronze_layer` folders. Remember to enable server-side encryption using Amazon S3-managed keys.    
+6. Navigate to the **Permissions** tab and scroll down to the [bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/userguide/add-bucket-policy.html) section and click **edit**.     
 
-TODO 
+
+>**Note**  
+> It is essential to block all public access settings to S3 buckets. Avoid using `"Principal": "*"` with an `allow` effect in S3 bucket policies, as this will enable public access to your AWS resources.    
+
+>**Note**  
+> Avoid setting up S3 bucket permissions using S3 ACLs as this is a legacy system.   
+
+TODO   
