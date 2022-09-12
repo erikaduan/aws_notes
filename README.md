@@ -86,14 +86,12 @@ The final task to complete in your root user account is to:
 3. Assign the `admin_access` policy to your previously created `admin` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access** or `aws iam attach-group-policy --group-name admin --policy-arn <admin-access-arn>` in CloudShell.   
 4. Create a new user named `admin-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `admin` user group.  Alternatively, use `aws iam create-user --user-name admin-<name>`, then `aws iam create-login-profile --user-name admin-<name> --password <password>` and then `aws iam add-user-to-group --group-name admin --user-name admin-<name>` in CloudShell.    
 5. [Activate admin user access to the AWS Billing console](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/control-access-billing.html) by navigating to **Account -> IAM User and Role Access to Billing Information -> Edit -> Activate IAM Access**.  
+6. Log into your AWS account as `admin-<name>` and test your admin user group IAM policy by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1` but can only launch an EC2 instance from `ap-southeast-2`.   
 
 You can now log into your administrator account to create more IAM user groups, access policies and users and access other cloud resources.    
 
 >**Note** 
-> Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` are discouraged.    
-
->**Note** 
-> You can test whether your admin JSON policy has been correctly applied by checking that you can access **IAM**, **CloudShell** and **Cost Explorer** via `us-east-1`, but can only launch an EC2 instance from `ap-southeast-2` as user `admin-<name>`.   
+>  Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` is discouraged.   
 </br>   
 
 
@@ -112,15 +110,15 @@ Log in via your `admin-<name>` IAM account to create more user groups. You can u
 | Platform Ops | Access AWS CodeCommit | :heavy_check_mark: | :heavy_check_mark: |     
 | Engineering | Access AWS Glue | :heavy_check_mark: | :x: |    
 | Engineering | Create S3 buckets | :heavy_check_mark: | :x: |    
-| Engineering | Set S3 bucket permissions | :heavy_check_mark: | :x: |    
+| Engineering | Create and edit S3 bucket policies | :heavy_check_mark: | :x: |     
 | Engineering | Read objects inside `source` S3 bucket | :heavy_check_mark: | :heavy_check_mark: |    
 | Engineering | Write objects inside `source` S3 bucket | :heavy_check_mark: | :x: |    
 | Analysis | Read objects inside `projects` S3 bucket | :heavy_check_mark: | :heavy_check_mark: |    
-| Analysis | Write objects inside `source` S3 bucket | :heavy_check_mark: | :heavy_check_mark: |     
+| Analysis | Write objects inside `source` S3 bucket | :heavy_check_mark: | :heavy_check_mark: |   
 | Analysis | Access AWS Sagemaker | :heavy_check_mark: | :heavy_check_mark: |     
-| Cloud compute | Create EC2 instances | :heavy_check_mark: | :heavy_check_mark: |    
-| Cloud compute | Access AWS Lambda | :heavy_check_mark: | :heavy_check_mark: |    
-| Containerisation | Access AWS ECS | :heavy_check_mark: | :heavy_check_mark: |    
+| Cloud compute | Access EC2 instances | :heavy_check_mark: | :heavy_check_mark: |     
+| Cloud compute | Access AWS Lambda | :heavy_check_mark: | :heavy_check_mark: |     
+| Containerisation | Access AWS ECS | :heavy_check_mark: | :heavy_check_mark: |     
 </br>   
 
 To create an `engineer` user group:  
@@ -139,6 +137,8 @@ To create an `engineer` user group:
                 "Effect": "Allow",
                 "Action": [
                     "ec2:*",
+                    "ecs:*",
+                    "lambda:*",
                     "glue:*",
                     "cloudshell:*",
                     "s3:*"
@@ -363,7 +363,7 @@ To create an `analyst` user group:
 4. Create a new IAM user named `analyst-<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.  
 
 >**Note**  
-> AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. Bucket access is managed using S3 bucket policies rather than IAM policies.    
+> AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. Bucket access is managed using S3 bucket policies for individual users rather than IAM policies for the analyst user group.      
 </br>      
 
 
@@ -464,15 +464,47 @@ To create the `projects` S3 bucket:
     </p></details>   
 
 >**Note**  
-> When IAM and S3 bucket policies both exist for a user, access is determined as the least-privilege union of all the user permissions.     
-
->**Note**  
-> It is essential to block all public access settings to S3 buckets. Avoid using `"Principal": "*"` with an `allow` effect in S3 bucket policies, as this will enable public access to your AWS resources.    
-
->**Note**  
-> Avoid setting up S3 bucket permissions using S3 ACLs as this is a legacy system.   
+> When IAM and S3 bucket policies both exist for a user, access is determined as the least-privilege union of all the user permissions. It is essential to block all public access settings to S3 buckets. To ensure this, avoid using `"Principal": "*"` with an `allow` effect in S3 bucket policies, as this will enable public access to your AWS resources. Also avoid setting up S3 bucket permissions using S3 ACLs as this is a legacy permissions maintenance system.      
 
 
-# Test IAM and S3 bucket policies  
+# Test IAM and S3 bucket policies    
+
+To test our IAM policies, we can also run the following tests in CloudShell from the `engineer-<name>` and `analyst-<name>` IAM user accounts.   
+
+From the `engineer-<name>` user account:   
+
+| Test | Command line code | Status |  
+| ---- | ----------------- | ------ |  
+| Create object in existing location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/landing_zone/hw_raw.txt --sse AES256` |  
+| Create object in new location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` | 
+| Create object in new location in source bucket (unencrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` |   
+| List folders and objects in source bucket |  `aws s3 ls s3://<name>-source/` | :heavy_check_mark: |  
+| Delete new folder in source bucket |  
+| Create new folder in source bucket |  
+| Create new object in source bucket |  
+| List folders and objects in source bucket |  
+| Delete new folder in source bucket |  
+
+
+From the `analyst-<name>` user account:   
+
++ 
++ 
++ 
++ 
+
+
+| CLI test | engineer | analyst |  
+| ------------------------------------------------------------------------------------ | ------------------ | --- |   
+| `echo "hi" \| aws s3 cp - s3://<name>-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |   
+| `aws s3 ls s3://<name>-landing-zone/test/`  | :heavy_check_mark:  | :heavy_check_mark: |     
+| `echo "hi" \| aws s3 cp - s3://<name>-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |     
+| `aws s3 ls s3://<name>-analysis/test/` | :heavy_check_mark:  | :heavy_check_mark: |     
+| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | Failed |     
+| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-landing-zone/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | :x: |   
+| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-analysis/test_copy/hw_copy.txt --sse AES256` |  | Failed |     
+| `aws s3 rm s3://<name>-landing-zone/test/hw_copy.txt` | :heavy_check_mark:  | :x: |   
+| `aws s3 rm s3://<name>-analysis/test/hw_copy.txt` | :heavy_check_mark:  | :heavy_check_mark: |   
+| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw.txt` | :x: | :x: |    
 
 
