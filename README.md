@@ -6,10 +6,10 @@ Step 1: [Create root user account](#create-aws-root-user-account)
 Step 2: [Create admin user group, admin access policy and assign users](#create-an-admin-iam-user-group-and-its-access-policy)    
 Step 3: [Create non-admin user groups, non-admin access policies and assign users](#create-non-admin-iam-user-groups-and-their-access-policies)       
 Step 4: [Create S3 buckets and bucket policies](#create-s3-buckets-and-bucket-policies)    
-Step 5: [Test IAM and S3 bucket policies](#test-iam-and-s3-bucket-policies)  
+Step 5: [Test IAM and S3 bucket policies](#test-iam-and-s3-bucket-policies)   
+Step 6: [Create and sync CodeCommit repository to SageMaker]
 
-TODO - Step 5: Test IAM and S3 bucket access policies  
-TODO - Step 6: Launch an EC2 instance with Sagemaker  
+
 
 This repository contains AWS console instructions and command line interface bash snippets for setting up a secure AWS environment. Code snippets are sourced from the [AWS Cookbook](https://github.com/sous-chef/aws) or from [official AWS documentation](https://docs.aws.amazon.com/index.html). Architectural patterns are also sourced from the [UK Ministry of Justice AWS Security Guidelines](https://security-guidance.service.justice.gov.uk/baseline-aws-accounts/#baseline-for-amazon-web-services-accounts) and [Statistics Canada AWS resouces](https://github.com/StatCan/daaas).  
 
@@ -479,9 +479,9 @@ To test our IAM policies, we can also run the following tests in CloudShell from
 | Create object in existing location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/landing_zone/hw_raw.txt --sse AES256` |  :heavy_check_mark: |   
 | Create object in new location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` | :heavy_check_mark: | 
 | Create object in new location in source bucket (unencrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` | :x: |  
-| List folders and objects in source bucket |  `aws s3 ls s3://<name>-source/` | :heavy_check_mark: |  
+| List folders and objects in source bucket |  `aws s3 ls s3://<name>-source/ --recursive` | :heavy_check_mark: |  
 | Delete new folder and folder contents in source bucket | `aws s3 rm s3://<name>-source/test --recursive` | :heavy_check_mark: |     
-| Create object in new location in projects bucket (encrypted) |  `echo "hello world" \| aws s3 cp - s3://<name>-projects/test/hw_test.txt --sse AES256` | :heavy_check_mark: |  
+| Create object in new location in projects bucket (encrypted) |  `echo "hello world" \| aws s3 cp - s3://<name>-projects/test/hw_test.txt --sse AES256` <br> `echo "hello world" \| aws s3 cp - s3://<name>-projects/nlp_classification/hw_test.txt --sse AES256` | :heavy_check_mark: |    
 | Delete new folder and folder contents in projects bucket | `aws s3 rm s3://<name>-projects/test --recursive` | :heavy_check_mark: |     
 | Create new S3 bucket | `aws s3 mb s3://<name>-test` | :heavy_check_mark: | 
 | Encrypt new S3 bucket | `aws s3api put-bucket-encryption --bucket <name>-test --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'` | :heavy_check_mark: |    
@@ -492,3 +492,19 @@ To test our IAM policies, we can also run the following tests in CloudShell from
 
 According to the S3 bucket policy, we expect the analyst to have read and write access to `arn:aws:s3:::<name>-projects/palmer_penguins` but not `arn:aws:s3:::<name>-projects/nlp_classification`.   
 
+| Test | Command line code | Status |  
+| ---- | ----------------- | ------ |    
+| List folders and objects in source bucket |  `aws s3 ls s3://<name>-source/ --recursive` | :heavy_check_mark: |  
+| Create object in existing location in source bucket (encrypted) |  `echo "hello world" \| aws s3 cp - s3://<name>-source/landing_zone/hw_copy.txt --sse AES256` | :x: | 
+| List folders and objects in projects bucket |  `aws s3 ls s3://<name>-projects/ --recursive` | :heavy_check_mark: |   
+| Copy object from source bucket to permitted projects bucket folder | `aws s3 cp s3://<name>-source/landing_zone/hw_raw.txt s3://<name>-projects/palmer_penguins/test/hw_test.txt --sse AES256 ` | :heavy_check_mark: |      
+| Copy object from source bucket to non-permitted projects bucket folder | `aws s3 cp s3://<name>-source/landing_zone/hw_raw.txt s3://<name>-projects/nlp_classification/test/hw_test.txt --sse AES256 ` | :x: |    
+| Delete new subfolder and subfolder contents from permitted projects bucket folder | `aws s3 rm s3://<name>-projects/palmer_penguins/test --recursive` | :heavy_check_mark: |  
+| Delete permitted projects bucket folder | `aws s3 rm s3://<name>-projects/palmer_penguins` | :x: |   
+| List buckets | `aws s3api list-buckets --query "Buckets[].Name"` | :heavy_check_mark: |   
+| Create new S3 bucket | `aws s3 mb s3://<name>-test` | :x: |   
+| Delete S3 bucket | `aws s3api delete-bucket --bucket <name>-projects` | :x: |     
+</br>   
+
+
+# Create and sync CodeCommit repository to SageMaker      
