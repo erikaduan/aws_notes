@@ -118,7 +118,7 @@ Log in via your `admin-<name>` IAM account to create more user groups. You can u
 | Analysis | Access AWS Sagemaker | :heavy_check_mark: | :heavy_check_mark: |     
 | Cloud compute | Access EC2 instances | :heavy_check_mark: | :heavy_check_mark: |     
 | Cloud compute | Access AWS Lambda | :heavy_check_mark: | :heavy_check_mark: |     
-| Containerisation | Access AWS ECS | :heavy_check_mark: | :heavy_check_mark: |     
+| Containerisation | Create AWS ECS images | :heavy_check_mark: | :heavy_check_mark: |     
 </br>   
 
 To create an `engineer` user group:  
@@ -464,47 +464,31 @@ To create the `projects` S3 bucket:
     </p></details>   
 
 >**Note**  
-> When IAM and S3 bucket policies both exist for a user, access is determined as the least-privilege union of all the user permissions. It is essential to block all public access settings to S3 buckets. To ensure this, avoid using `"Principal": "*"` with an `allow` effect in S3 bucket policies, as this will enable public access to your AWS resources. Also avoid setting up S3 bucket permissions using S3 ACLs as this is a legacy permissions maintenance system.      
+> When IAM and S3 bucket policies both exist for a user, access is determined as the least-privilege union of all the user permissions. Avoid using `"Principal": "*"` with an `allow` effect in S3 bucket policies, as this will enable public access to your AWS resources. Also avoid setting up S3 bucket permissions using S3 ACLs as this is a legacy permissions maintenance system.     
+</br> 
 
 
 # Test IAM and S3 bucket policies    
 
 To test our IAM policies, we can also run the following tests in CloudShell from the `engineer-<name>` and `analyst-<name>` IAM user accounts.   
 
-From the `engineer-<name>` user account:   
+### From the `engineer-<name>` user account:   
 
 | Test | Command line code | Status |  
 | ---- | ----------------- | ------ |  
-| Create object in existing location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/landing_zone/hw_raw.txt --sse AES256` |  
-| Create object in new location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` | 
-| Create object in new location in source bucket (unencrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` |   
+| Create object in existing location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/landing_zone/hw_raw.txt --sse AES256` |  :heavy_check_mark: |   
+| Create object in new location in source bucket (encrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` | :heavy_check_mark: | 
+| Create object in new location in source bucket (unencrypted) | `echo "hello world" \| aws s3 cp - s3://<name>-source/test/hw_test.txt --sse AES256` | :x: |  
 | List folders and objects in source bucket |  `aws s3 ls s3://<name>-source/` | :heavy_check_mark: |  
-| Delete new folder in source bucket |  
-| Create new folder in source bucket |  
-| Create new object in source bucket |  
-| List folders and objects in source bucket |  
-| Delete new folder in source bucket |  
+| Delete new folder and folder contents in source bucket | `aws s3 rm s3://<name>-source/test --recursive` | :heavy_check_mark: |     
+| Create object in new location in projects bucket (encrypted) |  `echo "hello world" \| aws s3 cp - s3://<name>-projects/test/hw_test.txt --sse AES256` | :heavy_check_mark: |  
+| Delete new folder and folder contents in projects bucket | `aws s3 rm s3://<name>-projects/test --recursive` | :heavy_check_mark: |     
+| Create new S3 bucket | `aws s3 mb s3://<name>-test` | :heavy_check_mark: | 
+| Encrypt new S3 bucket | `aws s3api put-bucket-encryption --bucket <name>-test --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'` | :heavy_check_mark: |    
+| List buckets | `aws s3api list-buckets --query "Buckets[].Name"` | :heavy_check_mark: | 
+| Delete S3 bucket | `aws s3api delete-bucket --bucket <name>-test` | :heavy_check_mark: |       
 
+### From the `analyst-<name>` user account:     
 
-From the `analyst-<name>` user account:   
-
-+ 
-+ 
-+ 
-+ 
-
-
-| CLI test | engineer | analyst |  
-| ------------------------------------------------------------------------------------ | ------------------ | --- |   
-| `echo "hi" \| aws s3 cp - s3://<name>-landing-zone/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |   
-| `aws s3 ls s3://<name>-landing-zone/test/`  | :heavy_check_mark:  | :heavy_check_mark: |     
-| `echo "hi" \| aws s3 cp - s3://<name>-analysis/test/hw.txt --sse AES256` | :heavy_check_mark: | :x: |     
-| `aws s3 ls s3://<name>-analysis/test/` | :heavy_check_mark:  | :heavy_check_mark: |     
-| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | Failed |     
-| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-landing-zone/test/hw_copy.txt --sse AES256` | :heavy_check_mark: | :x: |   
-| `aws s3 cp s3://<name>-analysis/test/hw.txt s3://<name>-analysis/test_copy/hw_copy.txt --sse AES256` |  | Failed |     
-| `aws s3 rm s3://<name>-landing-zone/test/hw_copy.txt` | :heavy_check_mark:  | :x: |   
-| `aws s3 rm s3://<name>-analysis/test/hw_copy.txt` | :heavy_check_mark:  | :heavy_check_mark: |   
-| `aws s3 cp s3://<name>-landing-zone/test/hw.txt s3://<name>-analysis/test/hw.txt` | :x: | :x: |    
-
+According to the S3 bucket policy, we expect the analyst to have read and write access to `arn:aws:s3:::<name>-projects/palmer_penguins` but not `arn:aws:s3:::<name>-projects/nlp_classification`.   
 
