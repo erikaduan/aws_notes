@@ -69,7 +69,8 @@ The final task to complete in your root user account is to create an `admin` use
     }
     ```    
 
-    **Note:** The condition `"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}` restricts all AWS resource access to only the Sydney region. Because account management resources like IAM, Cost Explorer, Key Management Service, CloudTrail and CloudShell can only be accessed via the global region i.e. default `us-east-1` region, we also need to explicitly allow access to these resources. AWS documentation about the latter step can be accessed [here](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html).    
+    > **Note** 
+    > The condition `"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}` restricts all AWS resource access to only the Sydney region. Because account management resources like IAM, Cost Explorer, Key Management Service, CloudTrail and CloudShell can only be accessed via the global region i.e. default `us-east-1` region, we also need to explicitly allow access to these resources. AWS documentation about the latter step can be accessed [here](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html).    
 
 3. Assign the `admin_access` policy to your previously created `admin` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access** or `aws iam attach-group-policy --group-name admin --policy-arn <admin_access_arn>` in CloudShell.    
 4. Create a new user named `admin_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `admin` user group.  Alternatively, use `aws iam create-user --user-name admin_<name>`, then `aws iam create-login-profile --user-name admin_<name> --password <password>` and then `aws iam add-user-to-group --group-name admin --user-name admin_<name>` in CloudShell.    
@@ -78,8 +79,8 @@ The final task to complete in your root user account is to create an `admin` use
 
 You can now log into your administrator account to create more IAM access policies, user groups and users, and access other AWS services.    
 
->**Note**    
->  Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` is discouraged.       
+> **Note**    
+> Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` is discouraged.       
 </br>   
 
 
@@ -336,7 +337,7 @@ To create an `analyst` user group:
 3. Assign the `analyst_access` policy to your previously created `analyst` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> analyst_access**.        
 4. Create a new IAM user named `analyst_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `analyst` user group.  
 
->**Note**  
+> **Note**  
 > AWS resource access for the `analyst` user group includes unrestricted access to EC2, Sagemaker, Lambda and ECS. Bucket access is managed using S3 bucket policies for individual users rather than IAM policies for the analyst user group.      
 </br>        
 

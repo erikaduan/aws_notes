@@ -1,6 +1,6 @@
 # AWS usage notes - a comprehensive guide for AWS newbies    
 
-![](./figures/readme_logo.jpg)git 
+![](./figures/readme_logo.jpg) 
 
 ![](https://img.shields.io/badge/Language-Bash-blue) ![](https://img.shields.io/badge/Language-Python-blue) ![](https://img.shields.io/badge/Language-R-blue)    
 
