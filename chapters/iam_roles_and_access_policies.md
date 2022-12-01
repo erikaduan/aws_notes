@@ -111,7 +111,6 @@ Log in via your `admin_<name>` IAM account to create more user groups. You can u
 </br>   
 
 ## Create an engineer user group   
-
 To create an `engineer` user group:  
 1. Create a new user group named `engineer` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name engineer` in CloudShell.   
 2. Create an engineer access policy named `engineer_access` via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.    
@@ -210,7 +209,6 @@ To create an `engineer` user group:
 </br>   
 
 ## Create an analyst user group    
-
 To create an `analyst` user group:  
 1. Create a new user group named `analyst` using **Access management -> User groups** in the IAM console or via `aws iam create-group --group-name analyst` in CloudShell.  
 2. Create an analyst access policy via **Access management -> Policies -> Create policy** and input the following code into the JSON editor.   
