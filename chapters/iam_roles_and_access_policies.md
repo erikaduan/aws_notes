@@ -5,6 +5,8 @@ Step 1: [Create root user account](#create-aws-root-user-account)
 Step 2: [Create admin user group and an admin access policy](#create-an-admin-iam-user-group-and-an-admin-access-policy)     
 Step 3: [Create non-admin user groups and non-admin access policies](#create-non-admin-iam-user-groups-and-their-access-policies)        
 
+# Change log  
+**2023/01/03**: Creating S3 buckets and S3 bucket policies is only enabled via the global region. Access to `s3:` actions has now been enabled for the `us-east-1` region across all access policies.     
 
 # Create AWS root user account   
 When you create a free tier personal AWS account, you need to first create a [root user account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html) which should only be used to:   
@@ -55,6 +57,7 @@ The final task to complete in your root user account is to create an `admin` use
                 "Effect": "Allow",
                 "Action": [
                     "iam:*",
+                    "s3:*", 
                     "kms:*", 
                     "cloudshell:*",
                     "access-analyzer:*",  
@@ -70,7 +73,7 @@ The final task to complete in your root user account is to create an `admin` use
     ```    
 
     > **Note** 
-    > The condition `"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}` restricts all AWS resource access to only the Sydney region. Because account management resources like IAM, Cost Explorer, Key Management Service, CloudTrail and CloudShell can only be accessed via the global region i.e. default `us-east-1` region, we also need to explicitly allow access to these resources. AWS documentation about the latter step can be accessed [here](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html).    
+    > The condition `"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}` restricts all AWS resource access to only the Sydney region. Because account management resources like IAM, Cost Explorer, Key Management Service, CloudTrail and CloudShell can only be accessed via the global region i.e. default `us-east-1` region, we also need to explicitly allow access to these resources. AWS documentation about the latter step can be accessed [here](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html). As of January 2023, the S3 service can only be accessed via the global region.     
 
 3. Assign the `admin_access` policy to your previously created `admin` user group through **Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access** or `aws iam attach-group-policy --group-name admin --policy-arn <admin_access_arn>` in CloudShell.    
 4. Create a new user named `admin_<name>` using `Access management -> Users -> Add user`, select **Password - AWS Management Console access** under AWS access type and add to the `admin` user group.  Alternatively, use `aws iam create-user --user-name admin_<name>`, then `aws iam create-login-profile --user-name admin_<name> --password <password>` and then `aws iam add-user-to-group --group-name admin --user-name admin_<name>` in CloudShell.    
@@ -149,6 +152,7 @@ To create an `engineer` user group:
                 "Effect": "Allow",
                 "Action": [
                     "cloudshell:*",
+                    "s3:*", 
                     "iam:PassRole",
                     "aws-portal:ViewUsage",
                     "aws-portal:ViewBilling",
@@ -264,7 +268,7 @@ To create an `analyst` user group:
                     "s3:GetEncryptionConfiguration"
                     ],
                 "Resource": "arn:aws:s3:::*", 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}}
+                "Condition": {"StringEquals": {"aws:RequestedRegion": ["ap-southeast-2", "us-east-1"]}}
             },
 
             {
