@@ -29,7 +29,6 @@ The first four tasks to complete in your root user account are to:
 4. Set your default region via `export AWS_REGION=ap-southeast-2` and check your AWS configuration via `aws configure list` in CloudShell.   
 </br>
 
-
 # Create an admin IAM user group and an admin access policy           
 [AWS recommends the creation of managed policies rather than inline policies to control user access to AWS resources.](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) Managed policies can be attached to multiple users or user groups and governance is controlled around maintaining a central library of AWS policies. Policy changes automatically apply for all associated users or user groups. Inline policies should only be used when you want to maintain strict one-to-one relationships between a policy and a single AWS identity and is not recommended for organisations. 
 
@@ -71,12 +70,11 @@ The final task to complete in your root user account is to create an **admin** u
         ]
     }
     ```    
-    <p>
 
     > **Note** 
     > The condition `"StringEquals": {"aws:RequestedRegion": "ap-southeast-2"}` restricts all AWS resource access to only the Sydney region. Because account management resources like IAM, S3, Cost Explorer, Key Management Service, CloudTrail and CloudShell can only be accessed via the global region i.e. default **us-east-1** region, we need to allow **us-east-1** region access for these resources.      
 
-3. Assign the **admin_access** policy to your previously created `admin` user group through ***Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access*** or `aws iam attach-group-policy --group-name admin --policy-arn <admin_access_arn>` in CloudShell.    
+3. Assign the **admin_access** policy to your previously created **admin** user group through ***Access management -> User groups -> admin -> Permissions -> Add permissions -> admin_access*** or `aws iam attach-group-policy --group-name admin --policy-arn <admin_access_arn>` in CloudShell.    
 4. Create a new user named **admin_\<name>** using ***Access management -> Users -> Add user***, select ***Password - AWS Management Console access*** under AWS access type and add to the **admin** user group.  Alternatively, use `aws iam create-user --user-name admin_<name>`, then `aws iam create-login-profile --user-name admin_<name> --password <password>` and then `aws iam add-user-to-group --group-name admin --user-name admin_<name>` in CloudShell.    
 5. [Activate admin user access to the AWS Billing console](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/control-access-billing.html) by navigating to ***Account -> IAM User and Role Access to Billing Information -> Edit -> Activate IAM Access***.  
 6. Log into your AWS account as **admin_\<name>** and test your admin user group IAM policy by checking that you can access IAM, CloudShell and Cost Explorer via **us-east-1** but can only launch an EC2 instance from **ap-southeast-2**.    
@@ -86,12 +84,11 @@ You can now log into your administrator account to create more IAM access polici
 Access policies should follow the principle of least privilege, where users are given the minimal level of access privileges required for task completion. As a result, for non-admin user groups, applying JSON policy settings using `"Resource": "*"` or `"Action": "*"` is discouraged.            
 </br>   
 
-
 # Create non-admin IAM user groups and their access policies        
 Log in via your **admin_\<name>** IAM account to create more user groups. You can use the IAM console or CloudShell to create:    
 
 + An **engineer** user group for individuals with read and `write access to all EC2 instances, S3, Sagemaker and Glue resources.   
-+ A **analyst** user group for individuals with read access to the **source** S3 bucket and read and write access to specific folders in the **projects** S3 bucket. This user group also has read and write access to all EC2 instances, S3, Sagemaker, Glue, Lambda and ECS.      
++ An **analyst** user group for individuals with read access to the **source** S3 bucket and read and write access to specific folders in the **projects** S3 bucket. This user group also has read and write access to all EC2 instances, S3, Sagemaker, Glue, Lambda and ECS.      
 
 | Role type | Role | Engineer | Analyst |    
 | --------- | ---- | -------- | ------- |     
@@ -159,7 +156,10 @@ To create an **engineer** user group:
                     "aws-portal:ViewAccount",
                     "iam:GetAccountPasswordPolicy",
                     "iam:ListMFADevices",
-                    "iam:ListPolicies"
+                    "iam:ListPolicies",
+                    "iam:GetRole",
+                    "iam:CreateServiceLinkedRole",
+                    "servicecatalog:*"
                     ],
                 "Resource": "*",
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
@@ -203,7 +203,6 @@ To create an **engineer** user group:
         ]
     }
     ```  
-    </p>   
 
 3. Assign the **engineer_access** policy to the **engineer** user group through ***Access management -> User groups -> admin -> Permissions -> Add permissions -> engineer_access*** or `aws iam attach-group-policy --group-name engineer --policy-arn <engineer_access_arn>` in CloudShell.     
 4. Create a new IAM user named **engineer_\<name>** using ***Access management -> Users -> Add user***, select ***Password - AWS Management Console access*** under AWS access type and add to the **engineer** user group.     
@@ -289,7 +288,10 @@ To create an **analyst** user group:
                     "aws-portal:ViewAccount",
                     "iam:GetAccountPasswordPolicy",
                     "iam:ListMFADevices",
-                    "iam:ListPolicies"
+                    "iam:ListPolicies",
+                    "iam:GetRole",
+                    "iam:CreateServiceLinkedRole",
+                    "servicecatalog:*"
                     ],
                 "Resource": "*",
                 "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
@@ -333,7 +335,6 @@ To create an **analyst** user group:
         ]
     }
     ```  
-    </p> 
 
     > **Note**   
     > To finely control **analyst** S3 bucket access, we will use the IAM **analyst** user group policy to allow LIST access to general S3 resources and then finetune S3 bucket policies to allow individual users GET and PUT access to specific buckets and bucket folders.    
