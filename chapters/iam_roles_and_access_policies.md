@@ -157,8 +157,10 @@ To create an **engineer** user group:
                     "iam:GetAccountPasswordPolicy",
                     "iam:ListMFADevices",
                     "iam:ListPolicies",
+                    "iam:ListAttachedRolePolicies",
                     "iam:GetRole",
-                    "iam:CreateServiceLinkedRole",
+                    "iam:CreateRole",
+                    "iam:CreateServiceLinkedRole",  
                     "servicecatalog:*"
                     ],
                 "Resource": "*",
@@ -193,7 +195,7 @@ To create an **engineer** user group:
                     "iam:DeleteAccessKey",
                     "iam:ListAccessKeys",
                     "iam:UpdateAccessKey",
-                    "iam:GetAccessKeyLastUsed"
+                    "iam:GetAccessKeyLastUsed",
                     "iam:ChangePassword",
                     "iam:GetUser"  
                     ],
@@ -266,7 +268,10 @@ To create an **analyst** user group:
                     "s3:GetEncryptionConfiguration"
                     ],
                 "Resource": "arn:aws:s3:::*", 
-                "Condition": {"StringEquals": {"aws:RequestedRegion": ["ap-southeast-2", "us-east-1"]}}
+                "Condition": {"StringEquals": {"aws:RequestedRegion": [
+                    "ap-southeast-2",
+                    "us-east-1"
+                    ]}}
             },
 
             {
@@ -289,7 +294,9 @@ To create an **analyst** user group:
                     "iam:GetAccountPasswordPolicy",
                     "iam:ListMFADevices",
                     "iam:ListPolicies",
+                    "iam:ListAttachedRolePolicies",
                     "iam:GetRole",
+                    "iam:CreateRole",
                     "iam:CreateServiceLinkedRole",
                     "servicecatalog:*"
                     ],

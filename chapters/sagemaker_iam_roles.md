@@ -1,6 +1,7 @@
 #  Enable SageMaker access    
 Step 1: [Add SageMaker access policies to existing user groups](#add-sagemaker-access-policies-to-existing-user-groups)    
-Step 2: [Test SageMaker access](#test-sagemaker-access)     
+Step 2: [Test SageMaker access](#test-sagemaker-access)    
+Step 3 (Optional): [Set up Visual Studio Code access to SageMaker]()   
 
 # Add SageMaker access policies to existing user groups  
 Although all SageMaker actions are enabled for the **engineer** and **analyst** user groups via IAM, a separate SageMaker full access policy must also be attached to user groups, so that interconnected EC2, ECR, Glue, CodeCommit, SecretsManager etc. access permissions are also enabled for SageMaker users.  
@@ -31,7 +32,7 @@ To set up access for your `admin`, `engineer` and `analyst` user groups:
         }
     ```    
 
-If you navigate to Sagemaker and encounter an error message like **...no identity-based policy allows the sagemaker:ListDomains action**, check that you have `"Action": ["iam:GetRole", "iam:CreateServiceLinkedRole"]` enabled for all resources in your user group IAM access policies.   
+If you navigate to Sagemaker and encounter an error message like **...no identity-based policy allows the sagemaker:ListDomains action**, check that you have `"Action": ["iam:GetRole", "iam:CreateRole", "iam:CreateServiceLinkedRole", "iam:ListAttachedRolePolicies"]` enabled for all resources in your user group IAM access policies.   
 
 # Test SageMaker access    
 To test SageMaker access:   
@@ -49,5 +50,6 @@ To test SageMaker access:
 | `aws --region ap-southeast-2 sagemaker delete-user-profile \--domain-id <domain-id> \--user-profile-name <user-profile-name>` | Delete each user profile associated a the domain |     
 | `aws --region ap-southeast-2 sagemaker list-spaces \--domain-id <domain-id>` |  List all the shared spaces in adomain |   
 | `aws --region ap-southeast-2 sagemaker delete-space \--domain-id <domain-id> \--space-name <space-name>` | Delete all shared spaces in a domain |    
-| `aws --region ap-southeast-2 sagemaker delete-domain \--domain-id <domain-id> \--retention-policy HomeEfsFileSystem=Delete` | Delete the domain and associated EFS |    
+| `aws --region ap-southeast-2 sagemaker delete-domain \--domain-id <domain-id> \--retention-policy HomeEfsFileSystem=Delete` | Finally delete the domain and its associated EFS |    
 
+# Set up Visual Studio Code access to SageMaker  
