@@ -1,7 +1,6 @@
 # Introduction to SageMaker     
 Step 1:    
 
-# Create domain   
+# Create notebook instance   
 
-
-# Create user profile  
+To create a notebook instance S3 bucket:    

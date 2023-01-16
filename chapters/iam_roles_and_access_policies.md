@@ -5,6 +5,8 @@ Step 2: [Create admin user group and an admin access policy](#create-an-admin-ia
 Step 3: [Create non-admin user groups and non-admin access policies](#create-non-admin-iam-user-groups-and-their-access-policies)        
 
 # Change log    
+**2023/06/30**: To do - replace deprecated actions for Billing and Cost Management products `aws-portal:ViewUsage`, `aws-portal:ViewBilling` and `aws-portal:ViewAccount` with new actions to view the Cost Explorer for all user groups and access billing for just the admin user group. This change will be implemented in July 2023.   
+
 **2023/01/03**: Creating S3 buckets and S3 bucket policies is only enabled via the global region. Access to `s3:` actions has now also been enabled for the **us-east-1** region for all access policies.  
 <br>   
 
