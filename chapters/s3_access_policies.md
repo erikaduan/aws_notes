@@ -3,8 +3,6 @@
 Step 1: [Create S3 buckets and S3 bucket policies](#create-s3-buckets-and-s3-bucket-policies)    
 Step 2: [Test S3 bucket policies](#test-s3-bucket-policies)   
 
-# Change log   
-<br>  
 
 # Create S3 buckets and S3 bucket policies   
 [Access to S3 resources](https://aws.amazon.com/blogs/security/iam-policies-and-bucket-policies-and-acls-oh-my-controlling-access-to-s3-resources/) can be controlled using multiple methods. In general, IAM policies allow or restrict S3 bucket resource permissions for user groups whereas S3 bucket policies are attached to specific S3 buckets and enable fine tuning of S3 bucket content permissions at the [principal](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html) i.e. individual user level.       
@@ -100,6 +98,7 @@ To create the **projects** S3 bucket:
  When IAM and S3 bucket policies both exist for a user, access is determined as the least-privilege union of all the user permissions. Always avoid using `"Principal": "*"` with an `allow` effect in S3 bucket policies, as this will enable public access to your AWS resources. Also avoid setting up S3 bucket permissions using S3 ACLs as this is a legacy permissions maintenance system.      
 </br> 
 
+
 # Test S3 bucket policies    
 To test S3 bucket policies, we need to ensure that:   
 
@@ -122,6 +121,7 @@ When using S3 bucket commands in Cloudshell, the `s3` commands provide higher le
 | Delete object from **\<name>-projects/palmer_penguins_analysis** bucket folder | `aws s3 rm s3://<name>-projects/palmer_penguins_analysis/hw_test.txt` | :heavy_check_mark: | :heavy_check_mark: |       
 
 > **Note**   
-> After deleting an S3 bucket, it can take a while for the bucket to be listed as deleted via `aws s3 ls` and `aws s3api list-buckets`.     
+> After deleting an S3 bucket, it can take a while for the bucket to be listed as deleted via `aws s3 ls` and `aws s3api list-buckets`.    
+<br> 
 
 Congratulations, you have now set up and tested your S3 bucket access policies for **engineer** and **analyst** user groups.     
