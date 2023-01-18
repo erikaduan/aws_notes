@@ -118,8 +118,22 @@ Some users may find it easier to access the AWS CLI through their local IDE (for
 
 To set up local CloudShell (AWS CLI) access:  
 1. Install [the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#cliv2-windows-install) on your local desktop. Confirm that the installation has been successful by navigating to your command prompt window and typing `aws --version`. This should output the version of the AWS CLI that you have just installed locally.   
-2. Log in AWS as **admin-\<name>** and 
+2. Log in AWS as **admin-\<name>** and navigate to ***Users -> analyst_\<name> -> Security credentials -> Access keys -> Create access key***. This will take you to a screen with a ***Download .csv file*** button that displays an **access key ID** and **secret Access key**. Keep both of these records private and save the `.csv` file somewhere where it cannot be commited to a public code repository.  
+3. In an organisation, the admin then sends this information to user **analyst_\<name>** through a secure process. It is good practice to deactivate old access keys and create and use new ones semi-regularly to decrease the chances of old access keys being misappropriated by third parties.   
+3. Log in AWS as **analyst-\<name>** and open your local command prompt window, for example via ***Search -> Command Prompt -> Right click -> Open as administrator*** for Windows users. Type `aws configure` and enter the **access key ID**, **secret access key** and enter `ap-southeast-2` for the default region. Enter `JSON` for the default output format.        
+4. Following this, you have now gained programatic access to your AWS resources via your local command prompt. Test this by entering `aws s3 ls` in the command prompt, which should output the list of S3 buckets available to **analyst-\<name>**.  
+5. You can now upload local datasets directly into your S3 bucket by downloading a dataset, for example the [R Palmer penguins dataset](https://github.com/allisonhorst/palmerpenguins/blob/main/inst/extdata/penguins.csv), into a local file director and then using the following bash template.  
 
+```
+cd .\data 
+
+aws s3 cp palmer_penguins.csv s3://<name>-projects/palmer_penguins_analysis/palmer_penguins.csv --sse AES256 
+
+ls aws s3 ls s3://<name>-projects --recursive
+```
+<br> 
+
+Congratulations! You have now set up SageMaker access for your **analyst** and **engineer** user groups and enabled local command prompt access to your AWS cloud account and services for your user **analyst-\<name>**.   
 
 
 # Other resources    
